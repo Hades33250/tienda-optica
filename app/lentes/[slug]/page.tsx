@@ -62,12 +62,14 @@ export default async function ProductPage({ params }) {
         <div className="product-detail-image">
           {mainImage?.src ? (
             <Image
-              src={mainImage.src}
-              alt={mainImage.alt || product.name}
-              width={900}
-              height={900}
-              priority
-            />
+  src={mainImage.src}
+  alt={mainImage.alt || product.name}
+  width={900}
+  height={900}
+  priority
+  unoptimized
+  className="product-detail-main-image"
+/>
           ) : (
             <div className="product-placeholder">
               👓
