@@ -333,3 +333,39 @@ footer {
     padding: 64px 24px;
   }
 }
+.product-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 280px;
+  overflow: hidden;
+  background: #eef8f7;
+}
+
+.product-card-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 20px;
+}
+
+.product-detail-main-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 620px;
+  object-fit: contain;
+  background: #eef8f7;
+  border-radius: 18px;
+  padding: 24px;
+}
+
+.variation-thumbnail {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #eef8f7;
+  padding: 6px;
+}
