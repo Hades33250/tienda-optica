@@ -6,6 +6,40 @@ type WooImage = {
   alt: string;
 };
 
+export type WooCategory = {
+  id: number;
+  name: string;
+  slug: string;
+};
+
+export type WooAttribute = {
+ id: number;
+  name: string;
+  position: number;
+  visible: boolean;
+  variation: boolean;
+  options: string[];
+};
+
+export type WooVariation = {
+  id: number;
+  date_created: string;
+  description: string;
+  permalink: string;
+  sku: string;
+  price: string;
+  regular_price: string;
+  sale_price: string;
+  stock_status: string;
+  stock_quantity: number | null;
+  image: WooImage;
+  attributes: {
+    id: number;
+    name: string;
+    option: string;
+  }[];
+};
+
 export type WooProduct = {
   id: number;
   name: string;
@@ -16,16 +50,14 @@ export type WooProduct = {
   price: string;
   regular_price: string;
   sale_price: string;
-  stock_status: "instock" | "outofstock" | "onbackorder" | string;
+  stock_status: string;
   stock_quantity: number | null;
   short_description: string;
   description: string;
   images: WooImage[];
-  categories: {
-    id: number;
-    name: string;
-    slug: string;
-  }[];
+  categories: WooCategory[];
+  attributes: WooAttribute[];
+  variations: number[];
 };
 
 const storeUrl = process.env.WOOCOMMERCE_URL;
@@ -38,18 +70,18 @@ if (!storeUrl || !consumerKey || !consumerSecret) {
   );
 }
 
-function createAuthorizationHeader() {
+function getAuthorizationHeader() {
   const credentials = `${consumerKey}:${consumerSecret}`;
 
   return `Basic ${Buffer.from(credentials).toString("base64")}`;
 }
 
-export async function getWooProducts(): Promise<WooProduct[]> {
+async function wooFetch<T>(endpoint: string): Promise<T> {
   const response = await fetch(
-    `${storeUrl}/wp-json/wc/v3/products?status=publish&per_page=24`,
+    `${storeUrl}/wp-json/wc/v3${endpoint}`,
     {
       headers: {
-        Authorization: createAuthorizationHeader(),
+        Authorization: getAuthorizationHeader(),
       },
       next: {
         revalidate: 300,
@@ -60,9 +92,33 @@ export async function getWooProducts(): Promise<WooProduct[]> {
 
   if (!response.ok) {
     throw new Error(
-      `No fue posible obtener productos de WooCommerce. HTTP ${response.status}`
+      `WooCommerce respondió con HTTP ${response.status}`
     );
   }
 
   return response.json();
+}
+
+export async function getWooProducts(): Promise<WooProduct[]> {
+  return wooFetch<WooProduct[]>(
+    "/products?status=publish&per_page=24"
+  );
+}
+
+export async function getWooProductBySlug(
+  slug: string
+): Promise<WooProduct | null> {
+  const products = await wooFetch<WooProduct[]>(
+    `/products?slug=${encodeURIComponent(slug)}&status=publish`
+  );
+
+  return products[0] || null;
+}
+
+export async function getWooVariations(
+  productId: number
+): Promise<WooVariation[]> {
+  return wooFetch<WooVariation[]>(
+    `/products/${productId}/variations?per_page=100`
+  );
 }
