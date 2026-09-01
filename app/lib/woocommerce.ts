@@ -1,6 +1,6 @@
 import "server-only";
 
-type WooImage = {
+export type WooImage = {
   id: number;
   src: string;
   alt: string;
@@ -13,7 +13,7 @@ export type WooCategory = {
 };
 
 export type WooAttribute = {
- id: number;
+  id: number;
   name: string;
   position: number;
   visible: boolean;
@@ -23,7 +23,6 @@ export type WooAttribute = {
 
 export type WooVariation = {
   id: number;
-  date_created: string;
   description: string;
   permalink: string;
   sku: string;
@@ -44,7 +43,7 @@ export type WooProduct = {
   id: number;
   name: string;
   slug: string;
-  type: "simple" | "variable" | string;
+  type: string;
   permalink: string;
   sku: string;
   price: string;
@@ -66,7 +65,7 @@ const consumerSecret = process.env.WOOCOMMERCE_CONSUMER_SECRET;
 
 if (!storeUrl || !consumerKey || !consumerSecret) {
   throw new Error(
-    "Faltan las variables de entorno de WooCommerce en Easypanel."
+    "Faltan las variables de entorno de WooCommerce."
   );
 }
 
@@ -80,19 +79,20 @@ async function wooFetch<T>(endpoint: string): Promise<T> {
   const response = await fetch(
     `${storeUrl}/wp-json/wc/v3${endpoint}`,
     {
+      method: "GET",
       headers: {
+        Accept: "application/json",
         Authorization: getAuthorizationHeader(),
       },
-      next: {
-        revalidate: 300,
-        tags: ["woocommerce-products"],
-      },
+      cache: "no-store",
     }
   );
 
   if (!response.ok) {
+    const responseText = await response.text();
+
     throw new Error(
-      `WooCommerce respondió con HTTP ${response.status}`
+      `WooCommerce HTTP ${response.status}: ${responseText.slice(0, 300)}`
     );
   }
 
