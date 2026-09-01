@@ -130,12 +130,14 @@ export default async function ProductPage({ params }) {
                       key={variation.id}
                     >
                       {variation.image?.src && (
-                        <Image
-                          src={variation.image.src}
-                          alt={color}
-                          width={80}
-                          height={80}
-                        />
+                       <Image
+  src={variation.image.src}
+  alt={color}
+  width={80}
+  height={80}
+  unoptimized
+  className="variation-thumbnail"
+/>
                       )}
 
                       <div>
