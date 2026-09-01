@@ -1,6 +1,7 @@
 const products = [
   {
     id: 1,
+    slug: "armazon-clasico-negro",
     name: "Armazón Clásico Negro",
     category: "Armazón graduable",
     price: "$1,299 MXN",
@@ -8,6 +9,7 @@ const products = [
   },
   {
     id: 2,
+    slug: "armazon-transparente",
     name: "Armazón Transparente",
     category: "Armazón graduable",
     price: "$1,499 MXN",
@@ -15,6 +17,7 @@ const products = [
   },
   {
     id: 3,
+    slug: "lentes-solares-urban",
     name: "Lentes Solares Urban",
     category: "Lentes de sol",
     price: "$1,799 MXN",
@@ -87,10 +90,17 @@ export default function Home() {
 
               <div className="product-content">
                 <p className="product-category">{product.category}</p>
+
                 <h3>{product.name}</h3>
+
                 <p className="price">{product.price}</p>
 
-                <button type="button">Ver producto</button>
+                <a
+                  href={`/lentes/${product.slug}`}
+                  className="product-button"
+                >
+                  Ver producto
+                </a>
               </div>
             </article>
           ))}
@@ -101,30 +111,44 @@ export default function Home() {
         <article>
           <span>01</span>
           <h3>Armazones seleccionados</h3>
-          <p>Opciones para diferentes rostros, estilos y necesidades visuales.</p>
+          <p>
+            Opciones para diferentes rostros, estilos y necesidades visuales.
+          </p>
         </article>
 
         <article>
           <span>02</span>
           <h3>Micas personalizadas</h3>
-          <p>Graduación, antirreflejante, filtro azul y protección solar.</p>
+          <p>
+            Graduación, antirreflejante, filtro azul y protección solar.
+          </p>
         </article>
 
         <article>
           <span>03</span>
           <h3>Atención profesional</h3>
-          <p>Compra en línea o agenda un examen visual para recibir asesoría.</p>
+          <p>
+            Compra en línea o agenda un examen visual para recibir asesoría.
+          </p>
         </article>
       </section>
 
       <section id="cita" className="appointment">
         <p className="eyebrow">ATENCIÓN PERSONALIZADA</p>
+
         <h2>Tu visión merece atención profesional.</h2>
+
         <p>
           En la siguiente fase conectaremos este botón a tu agenda, WhatsApp,
           n8n o formulario de citas.
         </p>
-        <a className="button button-primary" href="https://wa.me/">
+
+        <a
+          className="button button-primary"
+          href="https://wa.me/"
+          target="_blank"
+          rel="noreferrer"
+        >
           Solicitar información
         </a>
       </section>
