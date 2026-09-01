@@ -1,31 +1,9 @@
-const products = [
-  {
-    id: 1,
-    slug: "armazon-clasico-negro",
-    name: "Armazón Clásico Negro",
-    category: "Armazón graduable",
-    price: "$1,299 MXN",
-    emoji: "🕶️",
-  },
-  {
-    id: 2,
-    slug: "armazon-transparente",
-    name: "Armazón Transparente",
-    category: "Armazón graduable",
-    price: "$1,499 MXN",
-    emoji: "👓",
-  },
-  {
-    id: 3,
-    slug: "lentes-solares-urban",
-    name: "Lentes Solares Urban",
-    category: "Lentes de sol",
-    price: "$1,799 MXN",
-    emoji: "😎",
-  },
-];
+import Image from "next/image";
+import { getWooProducts } from "./lib/woocommerce";
 
-export default function Home() {
+export default async function Home() {
+  const products = await getWooProducts();
+
   return (
     <main>
       <header className="header">
@@ -73,37 +51,66 @@ export default function Home() {
       <section id="coleccion" className="section">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">CATÁLOGO DEMO</p>
-            <h2>Armazones destacados</h2>
+            <p className="eyebrow">CATÁLOGO EN LÍNEA</p>
+            <h2>Lentes y armazones</h2>
           </div>
 
           <p>
-            Más adelante estos productos se cargarán desde Shopify o desde tu
-            propia plataforma de comercio.
+            Productos sincronizados desde tu catálogo de WooCommerce.
           </p>
         </div>
 
         <div className="products">
-          {products.map((product) => (
-            <article className="product-card" key={product.id}>
-              <div className="product-image">{product.emoji}</div>
+          {products.length === 0 ? (
+            <p>No hay productos publicados por el momento.</p>
+          ) : (
+            products.map((product) => {
+              const image = product.images[0];
 
-              <div className="product-content">
-                <p className="product-category">{product.category}</p>
+              const category =
+                product.categories[0]?.name || "Lentes y armazones";
 
-                <h3>{product.name}</h3>
+              const price = product.sale_price || product.price;
 
-                <p className="price">{product.price}</p>
+              return (
+                <article className="product-card" key={product.id}>
+                  <div className="product-image">
+                    {image ? (
+                      <Image
+                        src={image.src}
+                        alt={image.alt || product.name}
+                        width={600}
+                        height={600}
+                      />
+                    ) : (
+                      <span>👓</span>
+                    )}
+                  </div>
 
-                <a
-                  href={`/lentes/${product.slug}`}
-                  className="product-button"
-                >
-                  Ver producto
-                </a>
-              </div>
-            </article>
-          ))}
+                  <div className="product-content">
+                    <p className="product-category">{category}</p>
+
+                    <h3>{product.name}</h3>
+
+                    <p className="price">
+                      {price
+                        ? `$${Number(price).toLocaleString("es-MX")} MXN`
+                        : "Consultar precio"}
+                    </p>
+
+                    <a
+                      href={product.permalink}
+                      className="product-button"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Ver producto
+                    </a>
+                  </div>
+                </article>
+              );
+            })
+          )}
         </div>
       </section>
 
@@ -154,7 +161,7 @@ export default function Home() {
       </section>
 
       <footer>
-        <p>© 2026 Óptica. Demostración técnica en Next.js y Easypanel.</p>
+        <p>© 2026 Óptica. Tienda en Next.js conectada a WooCommerce.</p>
       </footer>
     </main>
   );
