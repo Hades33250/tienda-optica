@@ -99,14 +99,12 @@ export default async function Home() {
                     </p>
 
                     <a
-                      href={product.permalink}
-                      className="product-button"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Ver producto
-                    </a>
-                  </div>
+  href={`/lentes/${product.slug}`}
+  className="product-button"
+>
+  Ver producto
+</a>
+                   </div>
                 </article>
               );
             })
