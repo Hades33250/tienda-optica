@@ -2,7 +2,17 @@ import Image from "next/image";
 import { getWooProducts } from "./lib/woocommerce";
 
 export default async function Home() {
-  const products = await getWooProducts();
+  let products = [];
+  let errorMessage = "";
+
+  try {
+    products = await getWooProducts();
+  } catch (error) {
+    console.error("Error al cargar WooCommerce:", error);
+
+    errorMessage =
+      "No fue posible cargar el catálogo en este momento.";
+  }
 
   return (
     <main>
@@ -29,7 +39,7 @@ export default async function Home() {
 
           <p className="hero-text">
             Elige tu armazón, selecciona tus micas y comparte tu graduación.
-            Esta es la primera demostración de tu futura tienda óptica en línea.
+            Compra tus lentes de manera sencilla y recibe atención profesional.
           </p>
 
           <div className="hero-actions">
@@ -56,61 +66,78 @@ export default async function Home() {
           </div>
 
           <p>
-            Productos sincronizados desde tu catálogo de WooCommerce.
+            Escoge tu armazon que se adapte a tu estilo.
           </p>
         </div>
 
-        <div className="products">
-          {products.length === 0 ? (
-            <p>No hay productos publicados por el momento.</p>
-          ) : (
-            products.map((product) => {
-              const image = product.images[0];
+        {errorMessage ? (
+          <div className="catalog-message">
+            <p>{errorMessage}</p>
+            <p>Por favor, intenta nuevamente más tarde.</p>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="catalog-message">
+            <p>No hay productos publicados en este momento.</p>
+          </div>
+        ) : (
+          <div className="products">
+            {products.map((product) => {
+              const image = product.images?.[0];
 
               const category =
-                product.categories[0]?.name || "Lentes y armazones";
+                product.categories?.[0]?.name ||
+                "Lentes y armazones";
 
-              const price = product.sale_price || product.price;
+              const price =
+                product.sale_price || product.price;
+
+              const formattedPrice = price
+                ? `$${Number(price).toLocaleString("es-MX")} MXN`
+                : "Consultar precio";
 
               return (
-                <article className="product-card" key={product.id}>
+                <article
+                  className="product-card"
+                  key={product.id}
+                >
                   <div className="product-image">
-                    <Image
-  src={image.src}
-  alt={image.alt || product.name}
-  width={600}
-  height={600}
-  unoptimized
-  className="product-card-image"
-/>
+                    {image?.src ? (
+                      <Image
+                        src={image.src}
+                        alt={image.alt || product.name}
+                        width={600}
+                        height={600}
+                        unoptimized
+                        className="product-card-image"
+                      />
                     ) : (
                       <span>👓</span>
                     )}
                   </div>
 
                   <div className="product-content">
-                    <p className="product-category">{category}</p>
+                    <p className="product-category">
+                      {category}
+                    </p>
 
                     <h3>{product.name}</h3>
 
                     <p className="price">
-                      {price
-                        ? `$${Number(price).toLocaleString("es-MX")} MXN`
-                        : "Consultar precio"}
+                      {formattedPrice}
                     </p>
 
                     <a
-  href={`/lentes/${product.slug}`}
-  className="product-button"
->
-  Ver producto
-</a>
-                   </div>
+                      href={`/lentes/${product.slug}`}
+                      className="product-button"
+                    >
+                      Ver producto
+                    </a>
+                  </div>
                 </article>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </section>
 
       <section id="beneficios" className="benefits">
@@ -145,7 +172,7 @@ export default async function Home() {
         <h2>Tu visión merece atención profesional.</h2>
 
         <p>
-          En la siguiente fase conectaremos este botón a tu agenda, WhatsApp,
+          Próximamente conectaremos este botón con tu agenda, WhatsApp,
           n8n o formulario de citas.
         </p>
 
@@ -160,7 +187,9 @@ export default async function Home() {
       </section>
 
       <footer>
-        <p>© 2026 Capital Vision.</p>
+        <p>
+          © Capital Vision 2026.
+        </p>
       </footer>
     </main>
   );
