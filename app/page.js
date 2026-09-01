@@ -152,7 +152,7 @@ export default async function Home() {
 
         <a
           className="button button-primary"
-          href="https://wa.me/"
+          href="https://wa.me/+525618452614"
           target="_blank"
           rel="noreferrer"
         >
@@ -161,7 +161,7 @@ export default async function Home() {
       </section>
 
       <footer>
-        <p>© 2026 Óptica. Tienda en Next.js conectada a WooCommerce.</p>
+        <p>© 2026 Capital Vision.</p>
       </footer>
     </main>
   );
