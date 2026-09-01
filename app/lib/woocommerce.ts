@@ -76,27 +76,29 @@ function getAuthorizationHeader() {
 }
 
 async function wooFetch<T>(endpoint: string): Promise<T> {
-  const response = await fetch(
-    `${storeUrl}/wp-json/wc/v3${endpoint}`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        Authorization: getAuthorizationHeader(),
-      },
-      cache: "no-store",
-    }
-  );
+  const url = `${storeUrl.replace(/\/$/, "")}/wp-json/wc/v3${endpoint}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      Authorization: getAuthorizationHeader(),
+    },
+    cache: "no-store",
+  });
+
+  const responseText = await response.text();
 
   if (!response.ok) {
-    const responseText = await response.text();
-
     throw new Error(
-      `WooCommerce HTTP ${response.status}: ${responseText.slice(0, 300)}`
+      `WooCommerce respondió HTTP ${response.status}: ${responseText.slice(
+        0,
+        300
+      )}`
     );
   }
 
-  return response.json();
+  return JSON.parse(responseText) as T;
 }
 
 export async function getWooProducts(): Promise<WooProduct[]> {
