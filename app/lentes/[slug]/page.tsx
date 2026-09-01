@@ -16,16 +16,16 @@ function formatPrice(price: string) {
     return "Consultar precio";
   }
 
-  const numericPrice = Number(price);
+  const value = Number(price);
 
-  if (Number.isNaN(numericPrice)) {
+  if (Number.isNaN(value)) {
     return "Consultar precio";
   }
 
-  return `$${numericPrice.toLocaleString("es-MX")} MXN`;
+  return `$${value.toLocaleString("es-MX")} MXN`;
 }
 
-function cleanHtml(html: string) {
+function cleanHtml(html = "") {
   return html
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/p>/gi, "\n")
@@ -41,7 +41,19 @@ export default async function ProductPage({
 }: ProductPageProps) {
   const { slug } = await params;
 
-  const product = await getWooProductBySlug(slug);
+  let product = null;
+  let productError = "";
+
+  try {
+    product = await getWooProductBySlug(slug);
+  } catch (error) {
+    console.error("Error consultando producto:", error);
+
+    productError =
+      error instanceof Error
+        ? error.message
+        : "No fue posible consultar el producto.";
+  }
 
   if (!product) {
     return (
@@ -49,29 +61,40 @@ export default async function ProductPage({
         <div className="product-error">
           <p className="eyebrow">PRODUCTO</p>
 
-          <h1>Producto no encontrado</h1>
+          <h1>No fue posible cargar este producto</h1>
 
           <p>
-            No encontramos un producto con la dirección:
+            Slug consultado:
           </p>
 
           <code>{slug}</code>
+
+          {productError && (
+            <p className="product-error-detail">
+              {productError}
+            </p>
+          )}
 
           <Link
             href="/"
             className="button button-primary"
           >
-            Volver a la tienda
+            Volver al catálogo
           </Link>
         </div>
       </main>
     );
   }
 
-  const variations =
-    product.type === "variable"
-      ? await getWooVariations(product.id)
-      : [];
+  let variations = [];
+
+  if (product.type === "variable") {
+    try {
+      variations = await getWooVariations(product.id);
+    } catch (error) {
+      console.error("Error consultando variaciones:", error);
+    }
+  }
 
   const mainImage = product.images?.[0];
 
@@ -91,13 +114,13 @@ export default async function ProductPage({
   return (
     <main className="product-page">
       <div className="product-container">
-        <div className="product-breadcrumb">
+        <nav className="product-breadcrumb">
           <Link href="/">Inicio</Link>
           <span>/</span>
           <span>{category}</span>
           <span>/</span>
           <span>{product.name}</span>
-        </div>
+        </nav>
 
         <section className="product-detail">
           <div className="product-detail-gallery">
@@ -119,20 +142,21 @@ export default async function ProductPage({
               )}
             </div>
 
-            {product.images.length > 1 && (
-              <div className="product-thumbnails">
-                {product.images.map((image) => (
-                  <Image
-                    key={image.id}
-                    src={image.src}
-                    alt={image.alt || product.name}
-                    width={100}
-                    height={100}
-                    unoptimized
-                  />
-                ))}
-              </div>
-            )}
+            {product.images &&
+              product.images.length > 1 && (
+                <div className="product-thumbnails">
+                  {product.images.map((image) => (
+                    <Image
+                      key={image.id}
+                      src={image.src}
+                      alt={image.alt || product.name}
+                      width={100}
+                      height={100}
+                      unoptimized
+                    />
+                  ))}
+                </div>
+              )}
           </div>
 
           <div className="product-detail-content">
@@ -174,13 +198,11 @@ export default async function ProductPage({
               </p>
             )}
 
-            <div className="product-availability">
-              {product.stock_status === "instock" ? (
-                <span>Disponible</span>
-              ) : (
-                <span>Consultar disponibilidad</span>
-              )}
-            </div>
+            <p className="product-availability">
+              {product.stock_status === "instock"
+                ? "Disponible"
+                : "Consultar disponibilidad"}
+            </p>
 
             {variations.length > 0 && (
               <section className="product-variations">
@@ -203,7 +225,7 @@ export default async function ProductPage({
                       variation.price;
 
                     return (
-                      <div
+                      <article
                         className="variation-option"
                         key={variation.id}
                       >
@@ -235,7 +257,7 @@ export default async function ProductPage({
                               : "No disponible"}
                           </small>
                         </div>
-                      </div>
+                      </article>
                     );
                   })}
                 </div>
@@ -249,7 +271,6 @@ export default async function ProductPage({
                 <input
                   type="radio"
                   name="purchase-type"
-                  value="frame"
                   defaultChecked
                 />
                 Solo armazón
@@ -259,7 +280,6 @@ export default async function ProductPage({
                 <input
                   type="radio"
                   name="purchase-type"
-                  value="prescription"
                 />
                 Armazón con lentes graduados
               </label>
