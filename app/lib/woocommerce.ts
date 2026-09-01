@@ -65,7 +65,7 @@ const consumerSecret = process.env.WOOCOMMERCE_CONSUMER_SECRET;
 
 if (!storeUrl || !consumerKey || !consumerSecret) {
   throw new Error(
-    "Faltan las variables de entorno de WooCommerce."
+    "Faltan las variables de entorno de WooCommerce en Easypanel."
   );
 }
 
@@ -76,29 +76,28 @@ function getAuthorizationHeader() {
 }
 
 async function wooFetch<T>(endpoint: string): Promise<T> {
-  const url = `${storeUrl.replace(/\/$/, "")}/wp-json/wc/v3${endpoint}`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      Authorization: getAuthorizationHeader(),
-    },
-    cache: "no-store",
-  });
-
-  const responseText = await response.text();
+  const response = await fetch(
+    `${storeUrl}/wp-json/wc/v3${endpoint}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: getAuthorizationHeader(),
+      },
+      next: {
+        revalidate: 300,
+        tags: ["woocommerce-products"],
+      },
+    }
+  );
 
   if (!response.ok) {
     throw new Error(
-      `WooCommerce respondió HTTP ${response.status}: ${responseText.slice(
-        0,
-        300
-      )}`
+      `WooCommerce respondió HTTP ${response.status}`
     );
   }
 
-  return JSON.parse(responseText) as T;
+  return response.json();
 }
 
 export async function getWooProducts(): Promise<WooProduct[]> {
