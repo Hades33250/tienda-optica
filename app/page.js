@@ -75,13 +75,14 @@ export default async function Home() {
               return (
                 <article className="product-card" key={product.id}>
                   <div className="product-image">
-                    {image ? (
-                      <Image
-                        src={image.src}
-                        alt={image.alt || product.name}
-                        width={600}
-                        height={600}
-                      />
+                    <Image
+  src={image.src}
+  alt={image.alt || product.name}
+  width={600}
+  height={600}
+  unoptimized
+  className="product-card-image"
+/>
                     ) : (
                       <span>👓</span>
                     )}
