@@ -1,24 +1,10 @@
-type Product = {
-  name: string;
-  category: string;
-  price: string;
-  description: string;
-  features: string[];
-};
-
-const products: Record<string, Product> = {
+const products = {
   "armazon-clasico-negro": {
     name: "Armazón Clásico Negro",
     category: "Armazón graduable",
     price: "$1,299 MXN",
     description:
-      "Armazón versátil y cómodo para uso diario. Ideal para personalizar con diferentes tipos de micas graduadas.",
-    features: [
-      "Diseño clásico",
-      "Color negro",
-      "Compatible con micas graduadas",
-      "Ideal para uso diario",
-    ],
+      "Armazón clásico y versátil para uso diario. Puedes personalizarlo con diferentes tipos de micas graduadas.",
   },
 
   "armazon-transparente": {
@@ -26,13 +12,7 @@ const products: Record<string, Product> = {
     category: "Armazón graduable",
     price: "$1,499 MXN",
     description:
-      "Armazón ligero y moderno con acabado transparente. Una opción adaptable para diferentes estilos.",
-    features: [
-      "Diseño moderno",
-      "Acabado transparente",
-      "Compatible con micas graduadas",
-      "Estructura ligera",
-    ],
+      "Diseño moderno, ligero y fácil de combinar con diferentes estilos.",
   },
 
   "lentes-solares-urban": {
@@ -40,13 +20,7 @@ const products: Record<string, Product> = {
     category: "Lentes de sol",
     price: "$1,799 MXN",
     description:
-      "Lentes solares para proteger tus ojos y complementar tu estilo en exteriores.",
-    features: [
-      "Protección solar",
-      "Diseño urbano",
-      "Uso exterior",
-      "Montura cómoda",
-    ],
+      "Lentes solares para complementar tu estilo y proteger tus ojos en exteriores.",
   },
 };
 
@@ -60,78 +34,72 @@ export default async function ProductPage({
   params,
 }: ProductPageProps) {
   const { slug } = await params;
-  const product = products[slug];
+
+  const product = products[slug as keyof typeof products];
 
   if (!product) {
     return (
-      <main className="mx-auto max-w-4xl px-6 py-20">
-        <h1 className="text-3xl font-bold">
-          Producto no encontrado
-        </h1>
+      <main className="product-page">
+        <h1>Producto no encontrado</h1>
 
-        <p className="mt-4 text-slate-600">
+        <p>
           El producto que buscas no existe o ya no está disponible.
         </p>
 
-        <a
-          href="/"
-          className="mt-8 inline-block rounded-lg bg-teal-700 px-5 py-3 font-semibold text-white"
-        >
-          Volver al inicio
-        </a>
+        <a href="/">Volver al inicio</a>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-16">
-      <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-2">
-        <div className="flex min-h-[420px] items-center justify-center rounded-3xl bg-[#eaf6f5] text-8xl">
+    <main className="product-page">
+      <a href="/" className="back-link">
+        ← Volver al catálogo
+      </a>
+
+      <section className="product-detail">
+        <div className="product-detail-image">
           👓
         </div>
 
-        <section>
-          <p className="text-sm font-bold uppercase tracking-[0.2em] text-teal-700">
+        <div className="product-detail-content">
+          <p className="product-category">
             {product.category}
           </p>
 
-          <h1 className="mt-4 text-4xl font-bold text-slate-900">
-            {product.name}
-          </h1>
+          <h1>{product.name}</h1>
 
-          <p className="mt-5 text-2xl font-bold text-slate-800">
-            {product.price}
-          </p>
+          <p className="price">{product.price}</p>
 
-          <p className="mt-6 leading-7 text-slate-600">
+          <p className="product-description">
             {product.description}
           </p>
 
-          <h2 className="mt-8 text-xl font-bold">
-            Características
-          </h2>
+          <h2>Personaliza tus lentes</h2>
 
-          <ul className="mt-4 space-y-3 text-slate-600">
-            {product.features.map((feature) => (
-              <li key={feature}>✓ {feature}</li>
-            ))}
-          </ul>
+          <label htmlFor="lens-type">
+            Tipo de mica
+          </label>
 
-          <button
-            type="button"
-            className="mt-10 w-full rounded-lg bg-teal-700 px-6 py-4 font-bold text-white transition hover:bg-teal-800"
-          >
-            Personalizar mis lentes
+          <select id="lens-type" name="lens-type">
+            <option value="organica">
+              Mica orgánica
+            </option>
+
+            <option value="antirreflejante">
+              Mica antirreflejante
+            </option>
+
+            <option value="filtro-azul">
+              Mica con filtro azul
+            </option>
+          </select>
+
+          <button type="button" className="button button-primary">
+            Agregar al carrito
           </button>
-
-          <a
-            href="/"
-            className="mt-4 block text-center text-sm font-semibold text-teal-700"
-          >
-            ← Volver al catálogo
-          </a>
-        </section>
-      </div>
+        </div>
+      </section>
     </main>
   );
 }
