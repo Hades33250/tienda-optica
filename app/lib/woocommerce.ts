@@ -64,9 +64,9 @@ export type WooProduct = {
 const rawStoreUrl = process.env.WOOCOMMERCE_URL || "";
 const storeUrl = rawStoreUrl.replace(/\/+$/, "");
 const consumerKey = process.env.WOOCOMMERCE_CONSUMER_KEY;
-const consumerSecret = process.env.WOOCOMMERCE_CONSUMER_SECRET;
+const consumerSecret = process.env.WOOCOMMERCE_CONSUMER_SECRET?.trim();
 
-if (!storeUrl || !consumerKey || !consumerSecret) {
+if (!storeUrl || !consumerKey || !consumerSecraet) {
   throw new Error(
     "Faltan las variables de entorno de WooCommerce en Easypanel."
   );
