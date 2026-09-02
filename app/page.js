@@ -172,27 +172,28 @@ export default async function Home() {
         <h2>Tu visión merece atención profesional.</h2>
 
         <p>
-         Realiza tu cita por Whatsapp o en Doctoralia
+          Realiza tu cita por WhatsApp o en Doctoralia.
         </p>
 
-        <a
-          className="button button-primary"
-          href="https://wa.me/+525618452614"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Whatsapp
-        </a>
-      </section>
+        <div className="hero-actions">
+          <a
+            className="button button-primary"
+            href="https://wa.me/525618452614"
+            target="_blank"
+            rel="noreferrer"
+          >
+            WhatsApp
+          </a>
 
-        <a
-          className="button button-primary"
-          href="https://www.doctoralia.com.mx/clinicas/clinica-capital-vision"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Doctoralia
-        </a>
+          <a
+            className="button button-primary"
+            href="https://www.doctoralia.com.mx/clinicas/clinica-capital-vision"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Doctoralia
+          </a>
+        </div>
       </section>
 
       <footer>
