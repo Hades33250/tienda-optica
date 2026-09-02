@@ -172,8 +172,7 @@ export default async function Home() {
         <h2>Tu visión merece atención profesional.</h2>
 
         <p>
-          Próximamente conectaremos este botón con tu agenda, WhatsApp,
-          n8n o formulario de citas.
+         Realiza tu cita por Whatsapp o en Doctoralia
         </p>
 
         <a
@@ -182,7 +181,17 @@ export default async function Home() {
           target="_blank"
           rel="noreferrer"
         >
-          Solicitar información
+          Whatsapp
+        </a>
+      </section>
+
+        <a
+          className="button button-primary"
+          href="https://www.doctoralia.com.mx/clinicas/clinica-capital-vision"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Doctoralia
         </a>
       </section>
 
