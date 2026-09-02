@@ -59,7 +59,10 @@ export type WooProduct = {
   variations: number[];
 };
 
-const storeUrl = process.env.WOOCOMMERCE_URL;
+
+
+const rawStoreUrl = process.env.WOOCOMMERCE_URL || "";
+const storeUrl = rawStoreUrl.replace(/\/+$/, "");
 const consumerKey = process.env.WOOCOMMERCE_CONSUMER_KEY;
 const consumerSecret = process.env.WOOCOMMERCE_CONSUMER_SECRET;
 
@@ -76,9 +79,10 @@ function getAuthorizationHeader() {
 }
 
 async function wooFetch<T>(endpoint: string): Promise<T> {
-  const response = await fetch(
-    `${storeUrl}/wp-json/wc/v3${endpoint}`,
-    {
+  const url = `${storeUrl}/wp-json/wc/v3${endpoint}`;
+
+  try {
+    const response = await fetch(url, {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -88,16 +92,27 @@ async function wooFetch<T>(endpoint: string): Promise<T> {
         revalidate: 300,
         tags: ["woocommerce-products"],
       },
-    }
-  );
+    });
 
-  if (!response.ok) {
+    if (!response.ok) {
+      const body = await response.text();
+
+      throw new Error(
+        `WooCommerce respondió HTTP ${response.status} en ${url}. ${body.slice(0, 300)}`
+      );
+    }
+
+    return response.json();
+  } catch (error) {
+    const detail =
+      error instanceof Error
+        ? error.message
+        : "Error de red desconocido";
+
     throw new Error(
-      `WooCommerce respondió HTTP ${response.status}`
+      `No se pudo conectar con WooCommerce en ${url}. ${detail}`
     );
   }
-
-  return response.json();
 }
 
 export async function getWooProducts(): Promise<WooProduct[]> {
