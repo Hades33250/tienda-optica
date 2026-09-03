@@ -11,7 +11,7 @@ type ProductPageProps = {
   }>;
 };
 
-function formatPrice(price: string) {
+function formatPrice(price?: string) {
   if (!price) {
     return "Consultar precio";
   }
@@ -42,17 +42,17 @@ export default async function ProductPage({
   const { slug } = await params;
 
   let product = null;
-  let productError = "";
+  let errorMessage = "";
 
   try {
     product = await getWooProductBySlug(slug);
   } catch (error) {
-    console.error("Error consultando producto:", error);
+    console.error("Error cargando producto:", error);
 
-    productError =
+    errorMessage =
       error instanceof Error
         ? error.message
-        : "No fue posible consultar el producto.";
+        : "No fue posible consultar este producto.";
   }
 
   if (!product) {
@@ -63,22 +63,17 @@ export default async function ProductPage({
 
           <h1>No fue posible cargar este producto</h1>
 
-          <p>
-            Slug consultado:
-          </p>
+          <p>Slug consultado:</p>
 
           <code>{slug}</code>
 
-          {productError && (
+          {errorMessage && (
             <p className="product-error-detail">
-              {productError}
+              {errorMessage}
             </p>
           )}
 
-          <Link
-            href="/"
-            className="button button-primary"
-          >
+          <Link href="/" className="button button-primary">
             Volver al catálogo
           </Link>
         </div>
@@ -92,23 +87,16 @@ export default async function ProductPage({
     try {
       variations = await getWooVariations(product.id);
     } catch (error) {
-      console.error("Error consultando variaciones:", error);
+      console.error("Error cargando variaciones:", error);
     }
   }
 
   const mainImage = product.images?.[0];
-
   const category =
-    product.categories?.[0]?.name ||
-    "Lentes y armazones";
-
-  const currentPrice =
-    product.sale_price || product.price;
-
+    product.categories?.[0]?.name || "Lentes y armazones";
+  const price = product.sale_price || product.price;
   const description = cleanHtml(
-    product.description ||
-      product.short_description ||
-      ""
+    product.description || product.short_description
   );
 
   return (
@@ -136,60 +124,35 @@ export default async function ProductPage({
                   className="product-detail-main-image"
                 />
               ) : (
-                <div className="product-placeholder">
-                  👓
-                </div>
+                <div className="product-placeholder">👓</div>
               )}
             </div>
-
-            {product.images &&
-              product.images.length > 1 && (
-                <div className="product-thumbnails">
-                  {product.images.map((image) => (
-                    <Image
-                      key={image.id}
-                      src={image.src}
-                      alt={image.alt || product.name}
-                      width={100}
-                      height={100}
-                      unoptimized
-                    />
-                  ))}
-                </div>
-              )}
           </div>
 
           <div className="product-detail-content">
-            <p className="product-category">
-              {category}
-            </p>
+            <p className="product-category">{category}</p>
 
             <h1>{product.name}</h1>
 
             <div className="product-prices">
               {product.sale_price &&
                 product.regular_price &&
-                product.sale_price !==
-                  product.regular_price && (
+                product.sale_price !== product.regular_price && (
                   <span className="product-old-price">
                     {formatPrice(product.regular_price)}
                   </span>
                 )}
 
               <span className="product-current-price">
-                {formatPrice(currentPrice)}
+                {formatPrice(price)}
               </span>
             </div>
 
             <div className="product-description">
-              {description ? (
-                <p>{description}</p>
-              ) : (
-                <p>
-                  Consulta la disponibilidad y opciones de
-                  personalización para este armazón.
-                </p>
-              )}
+              <p>
+                {description ||
+                  "Consulta la disponibilidad y opciones de personalización para este armazón."}
+              </p>
             </div>
 
             {product.sku && (
@@ -201,7 +164,7 @@ export default async function ProductPage({
             <p className="product-availability">
               {product.stock_status === "instock"
                 ? "Disponible"
-                : "Consultar disponibilidad"}
+                : "Consulta disponibilidad"}
             </p>
 
             {variations.length > 0 && (
@@ -210,7 +173,7 @@ export default async function ProductPage({
 
                 <div className="variation-list">
                   {variations.map((variation) => {
-                    const variationName =
+                    const attributes =
                       variation.attributes
                         ?.map(
                           (attribute) =>
@@ -218,11 +181,10 @@ export default async function ProductPage({
                         )
                         .join(", ") ||
                       variation.sku ||
-                      `Variación ${variation.id}`;
+                      "Opción disponible";
 
                     const variationPrice =
-                      variation.sale_price ||
-                      variation.price;
+                      variation.sale_price || variation.price;
 
                     return (
                       <article
@@ -232,9 +194,9 @@ export default async function ProductPage({
                         {variation.image?.src ? (
                           <Image
                             src={variation.image.src}
-                            alt={variationName}
-                            width={90}
-                            height={90}
+                            alt={attributes}
+                            width={80}
+                            height={80}
                             unoptimized
                           />
                         ) : (
@@ -244,15 +206,14 @@ export default async function ProductPage({
                         )}
 
                         <div>
-                          <p>{variationName}</p>
+                          <p>{attributes}</p>
 
                           <small>
                             {formatPrice(variationPrice)}
                           </small>
 
                           <small>
-                            {variation.stock_status ===
-                            "instock"
+                            {variation.stock_status === "instock"
                               ? "Disponible"
                               : "No disponible"}
                           </small>
@@ -277,29 +238,25 @@ export default async function ProductPage({
               </label>
 
               <label>
-                <input
-                  type="radio"
-                  name="purchase-type"
-                />
+                <input type="radio" name="purchase-type" />
                 Armazón con lentes graduados
               </label>
 
               <label>
-                <input
-                  type="checkbox"
-                  name="eye-exam"
-                />
+                <input type="checkbox" name="eye-exam" />
                 Quiero agendar un examen visual
               </label>
             </section>
 
             <div className="product-actions">
-              <button
-                type="button"
+              <a
                 className="button button-primary"
+                href="https://wa.me/525618452614"
+                target="_blank"
+                rel="noreferrer"
               >
-                Personalizar mis lentes
-              </button>
+                Solicitar información por WhatsApp
+              </a>
             </div>
 
             <Link href="/" className="back-link">
