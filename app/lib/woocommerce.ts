@@ -31,7 +31,7 @@ export type WooVariation = {
   sale_price: string;
   stock_status: string;
   stock_quantity: number | null;
-  image: WooImage;
+  image: WooImage | null;
   attributes: {
     id: number;
     name: string;
