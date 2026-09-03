@@ -66,7 +66,7 @@ const storeUrl = rawStoreUrl.replace(/\/+$/, "");
 const consumerKey = process.env.WOOCOMMERCE_CONSUMER_KEY;
 const consumerSecret = process.env.WOOCOMMERCE_CONSUMER_SECRET?.trim();
 
-if (!storeUrl || !consumerKey || !consumerSecraet) {
+if (!storeUrl || !consumerKey || !consumerSecret) {
   throw new Error(
     "Faltan las variables de entorno de WooCommerce en Easypanel."
   );
