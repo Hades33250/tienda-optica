@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState } from "react";
@@ -9,12 +10,12 @@ export type ProductOption = {
   regularPrice?: string;
   stockStatus?: string;
   image?: string;
- attributes?: {
-  name?: string;
-  slug?: string;
-  option?: string;
-  value?: string;
-}[];
+  attributes?: {
+    name?: string;
+    slug?: string;
+    option?: string;
+    value?: string;
+  }[];
 };
 
 type LensOption = {
@@ -32,81 +33,21 @@ type ProductConfiguratorProps = {
 };
 
 const lensOptions: LensOption[] = [
-  {
-    id: "cr39-antirreflejante",
-    name: "CR-39 monofocal con antirreflejante",
-    price: 800,
-  },
-  {
-    id: "cr39-filtro-azul",
-    name: "CR-39 monofocal con filtro azul",
-    price: 1200,
-  },
-  {
-    id: "cr39-fotocromatico",
-    name: "CR-39 fotocromático con filtro azul",
-    price: 1500,
-  },
-  {
-    id: "policarbonato-antirreflejante",
-    name: "Policarbonato con antirreflejante",
-    price: 1000,
-  },
-  {
-    id: "policarbonato-filtro-azul",
-    name: "Policarbonato con filtro azul",
-    price: 1400,
-  },
-  {
-    id: "alto-indice",
-    name: "Alto índice",
-    price: 1500,
-  },
-  {
-    id: "bifocal-ft-antirreflejante",
-    name: "Bifocal FT con antirreflejante",
-    price: 1600,
-  },
-  {
-    id: "bifocal-ft-filtro-azul",
-    name: "Bifocal FT con filtro azul",
-    price: 1800,
-  },
-  {
-    id: "bifocal-ft-fotocromatico",
-    name: "Bifocal FT fotocromático con filtro azul",
-    price: 2200,
-  },
-  {
-    id: "bifocal-blend-antirreflejante",
-    name: "Bifocal Blend con antirreflejante",
-    price: 1300,
-  },
-  {
-    id: "bifocal-blend-filtro-azul",
-    name: "Bifocal Blend con filtro azul",
-    price: 1900,
-  },
-  {
-    id: "bifocal-blend-fotocromatico",
-    name: "Bifocal Blend fotocromático con filtro azul",
-    price: 2300,
-  },
-  {
-    id: "progresivo-antirreflejante",
-    name: "Progresivo con antirreflejante",
-    price: 1900,
-  },
-  {
-    id: "progresivo-filtro-azul",
-    name: "Progresivo con filtro azul",
-    price: 2100,
-  },
-  {
-    id: "progresivo-fotocromatico",
-    name: "Progresivo fotocromático con filtro azul",
-    price: 2500,
-  },
+  { id: "cr39-ar", name: "CR-39 monofocal con antirreflejante", price: 800 },
+  { id: "cr39-blue", name: "CR-39 monofocal con filtro azul", price: 1200 },
+  { id: "cr39-photo-blue", name: "CR-39 fotocromático con filtro azul", price: 1500 },
+  { id: "poly-ar", name: "Policarbonato con antirreflejante", price: 1000 },
+  { id: "poly-blue", name: "Policarbonato con filtro azul", price: 1400 },
+  { id: "high-index", name: "Alto índice", price: 1500 },
+  { id: "ft-ar", name: "Bifocal FT con antirreflejante", price: 1600 },
+  { id: "ft-blue", name: "Bifocal FT con filtro azul", price: 1800 },
+  { id: "ft-photo-blue", name: "Bifocal FT fotocromático con filtro azul", price: 2200 },
+  { id: "blend-ar", name: "Bifocal Blend con antirreflejante", price: 1300 },
+  { id: "blend-blue", name: "Bifocal Blend con filtro azul", price: 1900 },
+  { id: "blend-photo-blue", name: "Bifocal Blend fotocromático con filtro azul", price: 2300 },
+  { id: "progressive-ar", name: "Progresivo con antirreflejante", price: 1900 },
+  { id: "progressive-blue", name: "Progresivo con filtro azul", price: 2100 },
+  { id: "progressive-photo-blue", name: "Progresivo fotocromático con filtro azul", price: 2500 },
 ];
 
 function formatMoney(value: number, currencySymbol: string) {
@@ -125,31 +66,29 @@ function decodeHtml(value = "") {
     .replace(/&#039;/g, "'");
 }
 
+function normalizeName(value = "") {
+  return value
+    .replace(/^pa_/i, "")
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function variationLabel(variation: ProductOption) {
   const attributes = variation.attributes
     ?.map((attribute) => {
-      const attributeName =
-        attribute.name ||
-        (attribute as { slug?: string }).slug ||
-        "Atributo";
+      const name = normalizeName(attribute.name || attribute.slug || "Variación");
+      const value = attribute.option || attribute.value || "";
 
-      const attributeValue =
-        attribute.option ||
-        (attribute as { value?: string }).value ||
-        "";
-
-      if (!attributeValue || attributeValue === "undefined") {
+      if (!value || value === "undefined") {
         return "";
       }
 
-      return `${attributeName}: ${attributeValue}`;
+      return `${name}: ${decodeHtml(value)}`;
     })
     .filter(Boolean)
     .join(" · ");
 
-  return decodeHtml(
-    attributes || variation.name || `Opción ${variation.id}`
-  );
+  return decodeHtml(attributes || variation.name || `Opción ${variation.id}`);
 }
 
 function parseVariationPrice(value?: string) {
@@ -158,12 +97,7 @@ function parseVariationPrice(value?: string) {
   }
 
   const numericValue = Number(value);
-
-  if (Number.isNaN(numericValue)) {
-    return null;
-  }
-
-  return numericValue;
+  return Number.isFinite(numericValue) ? numericValue : null;
 }
 
 export default function ProductConfigurator({
@@ -194,13 +128,9 @@ export default function ProductConfigurator({
     (variation) => variation.id.toString() === selectedVariationId
   );
 
-  const selectedVariationPrice = parseVariationPrice(
-    selectedVariation?.price
-  );
-
+  const selectedVariationPrice = parseVariationPrice(selectedVariation?.price);
   const framePrice = selectedVariationPrice ?? basePrice;
-  const lensPrice =
-    purchaseType === "prescription" ? selectedLens?.price || 0 : 0;
+  const lensPrice = purchaseType === "prescription" ? selectedLens?.price || 0 : 0;
   const total = framePrice + lensPrice;
 
   const whatsappUrl = useMemo(() => {
@@ -224,9 +154,7 @@ export default function ProductConfigurator({
         ? `Precio mica: ${formatMoney(lensPrice, currencySymbol)}`
         : "Precio mica: $0.00 MXN",
       `Total estimado: ${formatMoney(total, currencySymbol)}`,
-      `Examen visual: ${
-        needsExam ? "Sí, deseo agendarlo" : "No por ahora"
-      }`,
+      `Examen visual: ${needsExam ? "Sí, deseo agendarlo" : "No por ahora"}`,
       "",
       `Producto: ${productUrl}`,
     ];
@@ -254,7 +182,6 @@ export default function ProductConfigurator({
       {availableVariations.length > 0 && (
         <div className="configurator-field">
           <label htmlFor="frame-variation">Color o variación</label>
-
           <select
             id="frame-variation"
             value={selectedVariationId}
@@ -305,21 +232,18 @@ export default function ProductConfigurator({
       {purchaseType === "prescription" && (
         <div className="configurator-field">
           <label htmlFor="lens-type">Tipo de mica y tratamiento</label>
-
           <select
             id="lens-type"
             value={selectedLensId}
             onChange={(event) => setSelectedLensId(event.target.value)}
           >
             <option value="">Selecciona una opción</option>
-
             {lensOptions.map((option) => (
               <option key={option.id} value={option.id}>
                 {option.name} — {formatMoney(option.price, currencySymbol)}
               </option>
             ))}
           </select>
-
           <p className="configurator-note">
             El precio de la mica ya incluye el tratamiento indicado.
           </p>
@@ -370,8 +294,7 @@ export default function ProductConfigurator({
       </a>
 
       <p className="configurator-disclaimer">
-        El total es estimado y puede confirmarse después de revisar tu
-        graduación.
+        El total es estimado y puede confirmarse después de revisar tu graduación.
       </p>
     </section>
   );
