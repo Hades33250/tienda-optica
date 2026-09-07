@@ -1,6 +1,37 @@
 import Image from "next/image";
 import { getWooProducts } from "./lib/woocommerce";
 
+function formatPrice(product) {
+  const rawPrice =
+    product.prices?.sale_price ||
+    product.prices?.price ||
+    product.sale_price ||
+    product.price;
+
+  if (!rawPrice) {
+    return "Consultar precio";
+  }
+
+  const minorUnit =
+    product.prices?.currency_minor_unit ?? 2;
+
+  const currencySymbol =
+    product.prices?.currency_symbol || "$";
+
+  const numericPrice = Number(rawPrice);
+
+  if (Number.isNaN(numericPrice)) {
+    return "Consultar precio";
+  }
+
+  const price = numericPrice / 10 ** minorUnit;
+
+  return `${currencySymbol}${price.toLocaleString("es-MX", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} MXN`;
+}
+
 export default async function Home() {
   let products = [];
   let errorMessage = "";
@@ -30,7 +61,9 @@ export default async function Home() {
 
       <section className="hero">
         <div className="hero-content">
-          <p className="eyebrow">VISIÓN, ESTILO Y TECNOLOGÍA</p>
+          <p className="eyebrow">
+            VISIÓN, ESTILO Y TECNOLOGÍA
+          </p>
 
           <h1>
             Encuentra lentes
@@ -38,16 +71,23 @@ export default async function Home() {
           </h1>
 
           <p className="hero-text">
-            Elige tu armazón, selecciona tus micas y comparte tu graduación.
-            Compra tus lentes de manera sencilla y recibe atención profesional.
+            Elige tu armazón, selecciona tus micas y comparte
+            tu graduación. Compra tus lentes de manera sencilla
+            y recibe atención profesional.
           </p>
 
           <div className="hero-actions">
-            <a className="button button-primary" href="#coleccion">
+            <a
+              className="button button-primary"
+              href="#coleccion"
+            >
               Ver colección
             </a>
 
-            <a className="button button-secondary" href="#cita">
+            <a
+              className="button button-secondary"
+              href="#cita"
+            >
               Agendar examen visual
             </a>
           </div>
@@ -62,22 +102,28 @@ export default async function Home() {
         <div className="section-heading">
           <div>
             <p className="eyebrow">CATÁLOGO EN LÍNEA</p>
+
             <h2>Lentes y armazones</h2>
           </div>
 
           <p>
-            Escoge tu armazon que se adapte a tu estilo.
+            Escoge el armazón que se adapte a tu estilo.
           </p>
         </div>
 
         {errorMessage ? (
           <div className="catalog-message">
             <p>{errorMessage}</p>
-            <p>Por favor, intenta nuevamente más tarde.</p>
+
+            <p>
+              Por favor, intenta nuevamente más tarde.
+            </p>
           </div>
         ) : products.length === 0 ? (
           <div className="catalog-message">
-            <p>No hay productos publicados en este momento.</p>
+            <p>
+              No hay productos publicados en este momento.
+            </p>
           </div>
         ) : (
           <div className="products">
@@ -87,28 +133,6 @@ export default async function Home() {
               const category =
                 product.categories?.[0]?.name ||
                 "Lentes y armazones";
-
-              const price =
-  product.prices?.sale_price ||
-  product.prices?.price ||
-  product.sale_price ||
-  product.price;
-
-const currencySymbol =
-  product.prices?.currency_symbol || "$";
-
-const currencyMinorUnit =
-  product.prices?.currency_minor_unit ?? 2;
-
-              const formattedPrice = price
-  ? `${currencySymbol}${(
-      Number(price) /
-      10 ** currencyMinorUnit
-    ).toLocaleString("es-MX", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })} MXN`
-  : "Consultar precio";
 
               return (
                 <article
@@ -138,7 +162,7 @@ const currencyMinorUnit =
                     <h3>{product.name}</h3>
 
                     <p className="price">
-                      {formattedPrice}
+                      {formatPrice(product)}
                     </p>
 
                     <a
@@ -158,33 +182,46 @@ const currencyMinorUnit =
       <section id="beneficios" className="benefits">
         <article>
           <span>01</span>
+
           <h3>Armazones seleccionados</h3>
+
           <p>
-            Opciones para diferentes rostros, estilos y necesidades visuales.
+            Opciones para diferentes rostros, estilos y
+            necesidades visuales.
           </p>
         </article>
 
         <article>
           <span>02</span>
+
           <h3>Micas personalizadas</h3>
+
           <p>
-            Graduación, antirreflejante, filtro azul y protección solar.
+            Graduación, antirreflejante, filtro azul y
+            protección solar.
           </p>
         </article>
 
         <article>
           <span>03</span>
+
           <h3>Atención profesional</h3>
+
           <p>
-            Compra en línea o agenda un examen visual para recibir asesoría.
+            Compra en línea o agenda un examen visual para
+            recibir asesoría.
           </p>
         </article>
       </section>
 
       <section id="cita" className="appointment">
-        <p className="eyebrow">ATENCIÓN PERSONALIZADA</p>
+        <p className="eyebrow">
+          ATENCIÓN PERSONALIZADA
+        </p>
 
-        <h2>Tu visión merece atención profesional.</h2>
+        <h2>
+          Tu visión merece atención profesional.
+        </h2>
 
         <p>
           Realiza tu cita por WhatsApp o en Doctoralia.
@@ -212,9 +249,7 @@ const currencyMinorUnit =
       </section>
 
       <footer>
-        <p>
-          © Capital Vision 2026.
-        </p>
+        <p>© Capital Vision 2026.</p>
       </footer>
     </main>
   );
