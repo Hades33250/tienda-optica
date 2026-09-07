@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import ProductConfigurator from "../../../components/ProductConfigurator";
+import ProductDetailClient from "../../../components/ProductDetailClient";
+import type { ProductOption } from "../../../components/ProductConfigurator";
 
 type StoreImage = {
   id?: number;
@@ -146,13 +147,6 @@ function getVariationRegularPrice(variation: StoreVariation) {
   return getDirectPrice(variation.regular_price);
 }
 
-function formatMoney(value: number, symbol = "$") {
-  return `${symbol}${value.toLocaleString("es-MX", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })} MXN`;
-}
-
 async function getProduct(slug: string): Promise<StoreProduct | null> {
   if (!STORE_URL) {
     return null;
@@ -202,14 +196,14 @@ export default async function ProductPage({ params }: PageProps) {
   }
 
   const variations = await getVariations(product);
-  const price = getPriceFromStorePrices(product.prices);
+  const basePrice = getPriceFromStorePrices(product.prices);
   const regularPrice = getRegularPriceFromStorePrices(product.prices);
   const currencySymbol = product.prices?.currency_symbol || "$";
   const description = stripHtml(product.description || product.short_description || "");
   const mainImage = product.images?.[0];
   const productUrl = product.permalink || `${STORE_URL}/producto/${product.slug}/`;
 
-  const configuratorVariations = variations.map((variation) => {
+  const configuratorVariations: ProductOption[] = variations.map((variation) => {
     const salePrice = getVariationSalePrice(variation);
     const normalPrice = getVariationRegularPrice(variation);
 
@@ -232,78 +226,41 @@ export default async function ProductPage({ params }: PageProps) {
         <span>{decodeHtml(product.name)}</span>
       </nav>
 
-      <section className="product-detail">
-        <div className="product-gallery">
-          <div className="product-main-image">
-            {mainImage?.src ? (
-              <img
-                src={mainImage.src}
-                alt={mainImage.alt || decodeHtml(product.name)}
-                className="product-main-image-file"
-              />
-            ) : (
-              <div className="product-image-placeholder">
-                Imagen no disponible
-              </div>
-            )}
-          </div>
+      <section className="product-detail-page-header">
+        <div>
+          {product.sku && <p className="product-sku">Modelo: {product.sku}</p>}
+          <h1>{decodeHtml(product.name)}</h1>
+        </div>
 
-          {product.images && product.images.length > 1 && (
-            <div className="product-thumbnails">
-              {product.images.slice(1).map((image, index) => (
-                <div className="product-thumbnail" key={image.id || index}>
-                  <img
-                    src={image.thumbnail || image.src}
-                    alt={image.alt || `${decodeHtml(product.name)} ${index + 2}`}
-                    className="product-thumbnail-file"
-                  />
+        {description && <p className="product-description">{description}</p>}
+      </section>
+
+      <ProductDetailClient
+        productName={decodeHtml(product.name)}
+        productUrl={productUrl}
+        basePrice={basePrice}
+        regularPrice={regularPrice > 0 ? regularPrice : undefined}
+        currencySymbol={currencySymbol}
+        mainImage={mainImage}
+        images={product.images || []}
+        variations={configuratorVariations}
+      />
+
+      {product.attributes && product.attributes.length > 0 && (
+        <section className="product-specifications">
+          <h2>Detalles del armazón</h2>
+          <dl>
+            {product.attributes
+              .filter((attribute) => attribute.options && attribute.options.length > 0)
+              .map((attribute) => (
+                <div key={attribute.id || attribute.name}>
+                  <dt>{attribute.name}</dt>
+                  <dd>{attribute.options?.join(", ")}</dd>
                 </div>
               ))}
-            </div>
-          )}
-        </div>
-
-        <div className="product-info">
-          {product.sku && <p className="product-sku">Modelo: {product.sku}</p>}
-
-          <h1>{decodeHtml(product.name)}</h1>
-
-          <p className="product-price">
-            {product.on_sale && regularPrice > price && (
-              <del>{formatMoney(regularPrice, currencySymbol)}</del>
-            )}
-            <span>{formatMoney(price, currencySymbol)}</span>
-          </p>
-
-          <p className="product-price-note">Precio del armazón</p>
-
-          {description && <p className="product-description">{description}</p>}
-
-          {product.attributes && product.attributes.length > 0 && (
-            <section className="product-specifications">
-              <h2>Detalles del armazón</h2>
-              <dl>
-                {product.attributes
-                  .filter((attribute) => attribute.options && attribute.options.length > 0)
-                  .map((attribute) => (
-                    <div key={attribute.id || attribute.name}>
-                      <dt>{attribute.name}</dt>
-                      <dd>{attribute.options?.join(", ")}</dd>
-                    </div>
-                  ))}
-              </dl>
-            </section>
-          )}
-
-          <ProductConfigurator
-            productName={decodeHtml(product.name)}
-            productUrl={productUrl}
-            basePrice={price}
-            currencySymbol={currencySymbol}
-            variations={configuratorVariations}
-          />
-        </div>
-      </section>
+          </dl>
+        </section>
+      )}
     </main>
   );
 }
