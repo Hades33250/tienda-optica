@@ -33,7 +33,6 @@ function formatPrice(
     maximumFractionDigits: 2,
   })} MXN`;
 }
-
 function cleanHtml(html = "") {
   return html
     .replace(/<br\s*\/?>/gi, "\n")
