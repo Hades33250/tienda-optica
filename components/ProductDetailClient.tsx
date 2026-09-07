@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import ProductConfigurator, {
   type ProductOption,
 } from "./ProductConfigurator";
@@ -39,76 +39,49 @@ function decodeHtml(value = "") {
     .replace(/&#039;/g, "'");
 }
 
-function normalizeColorName(value = "") {
+function normalizeLabel(value = "") {
   return value
     .replace(/^pa_/i, "")
     .replace(/[-_]/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function getVariationName(variation: ProductOption) {
-  const colorAttribute = variation.attributes?.find((attribute) => {
-    const name = (attribute.name || attribute.slug || "").toLowerCase();
-    return name.includes("color");
-  });
+function getVariationLabel(variation: ProductOption) {
+  const attribute = variation.attributes?.find((item) => {
+    const name = `${item.name || ""} ${item.slug || ""}`.toLowerCase();
+    return name.includes("color") || name.includes("pa_");
+  }) || variation.attributes?.[0];
 
-  const rawName =
-    colorAttribute?.option ||
-    colorAttribute?.value ||
-    variation.attributes?.[0]?.option ||
-    variation.attributes?.[0]?.value ||
+  const value =
+    attribute?.option ||
+    attribute?.value ||
     variation.name ||
     `Opción ${variation.id}`;
 
-  return normalizeColorName(decodeHtml(rawName));
+  return normalizeLabel(decodeHtml(value));
 }
 
-function getColorValue(name: string) {
-  const normalized = name.toLowerCase();
+function getColor(value: string) {
+  const name = value.toLowerCase();
 
-  if (normalized.includes("negro")) return "#151515";
-  if (normalized.includes("blanco")) return "#f8fafc";
-  if (
-    normalized.includes("brown") ||
-    normalized.includes("cafe") ||
-    normalized.includes("café")
-  ) {
+  if (name.includes("negro")) return "#111827";
+  if (name.includes("blanco")) return "#f8fafc";
+  if (name.includes("brown") || name.includes("cafe") || name.includes("café")) {
     return "#6f4e37";
   }
-  if (normalized.includes("carey")) return "#8b5a2b";
-  if (normalized.includes("dorado") || normalized.includes("oro")) return "#c9a227";
-  if (normalized.includes("plata") || normalized.includes("silver")) return "#a7aeb8";
-  if (normalized.includes("rojo") || normalized.includes("red")) return "#b42318";
-  if (normalized.includes("azul") || normalized.includes("blue")) return "#1d4ed8";
-  if (normalized.includes("verde") || normalized.includes("green")) return "#15803d";
-  if (normalized.includes("rosa") || normalized.includes("pink")) return "#db2777";
-  if (
-    normalized.includes("gris") ||
-    normalized.includes("gray") ||
-    normalized.includes("grey")
-  ) {
-    return "#64748b";
-  }
+  if (name.includes("carey")) return "#9a642f";
+  if (name.includes("dorado") || name.includes("oro")) return "#c6a227";
+  if (name.includes("plata") || name.includes("silver")) return "#a8b0bb";
+  if (name.includes("azul") || name.includes("blue")) return "#2563eb";
+  if (name.includes("rojo") || name.includes("red")) return "#b91c1c";
 
   return "#94a3b8";
 }
 
-function getVariationPrice(variation?: ProductOption) {
-  if (!variation?.price) {
-    return null;
-  }
-
-  const price = Number(variation.price);
-  return Number.isFinite(price) ? price : null;
-}
-
-function getVariationRegularPrice(variation?: ProductOption) {
-  if (!variation?.regularPrice) {
-    return null;
-  }
-
-  const price = Number(variation.regularPrice);
-  return Number.isFinite(price) ? price : null;
+function numberOrNull(value?: string) {
+  if (!value) return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }
 
 export default function ProductDetailClient({
@@ -125,41 +98,45 @@ export default function ProductDetailClient({
     (variation) => variation.stockStatus !== "outofstock"
   );
 
-  const initialVariation = availableVariations[0];
-  const initialImage =
-    initialVariation?.image || mainImage?.src || images[0]?.src || null;
-
+  const firstVariation = availableVariations[0];
   const [selectedVariationId, setSelectedVariationId] = useState(
-    initialVariation?.id?.toString() || ""
+    firstVariation?.id.toString() || ""
   );
-  const [activeImage, setActiveImage] = useState<string | null>(initialImage);
+  const [selectedImage, setSelectedImage] = useState(
+    firstVariation?.image || mainImage?.src || images[0]?.src || ""
+  );
 
   const selectedVariation = availableVariations.find(
     (variation) => variation.id.toString() === selectedVariationId
   );
-  const selectedPrice = getVariationPrice(selectedVariation) ?? basePrice;
+  const selectedPrice = numberOrNull(selectedVariation?.price) ?? basePrice;
   const selectedRegularPrice =
-    getVariationRegularPrice(selectedVariation) ?? regularPrice;
+    numberOrNull(selectedVariation?.regularPrice) ?? regularPrice;
 
-  const galleryImages: ProductImage[] = useMemo(() => {
-    const activeImageItem: ProductImage | null = activeImage
-      ? { id: "active", src: activeImage, alt: productName }
-      : null;
+  const variationImages = availableVariations
+    .filter((variation) => variation.image)
+    .map((variation) => ({
+      id: `variation-${variation.id}`,
+      src: variation.image as string,
+      alt: getVariationLabel(variation),
+    }));
 
-    const allImages = activeImageItem ? [activeImageItem, ...images] : images;
+  const allGalleryImages = [
+    ...(selectedImage
+      ? [{ id: "selected", src: selectedImage, alt: productName }]
+      : []),
+    ...variationImages,
+    ...images,
+  ].filter(
+    (image, index, array) =>
+      image.src && array.findIndex((item) => item.src === image.src) === index
+  );
 
-    return allImages.filter(
-      (image, index, array) =>
-        Boolean(image?.src) &&
-        array.findIndex((item) => item.src === image.src) === index
-    );
-  }, [activeImage, images, productName]);
-
-  function selectVariation(variation: ProductOption) {
+  function chooseVariation(variation: ProductOption) {
     setSelectedVariationId(variation.id.toString());
 
     if (variation.image) {
-      setActiveImage(variation.image);
+      setSelectedImage(variation.image);
     }
   }
 
@@ -167,9 +144,9 @@ export default function ProductDetailClient({
     <section className="product-detail-client">
       <div className="product-gallery">
         <div className="product-main-image">
-          {activeImage ? (
+          {selectedImage ? (
             <img
-              src={activeImage}
+              src={selectedImage}
               alt={decodeHtml(productName)}
               className="product-main-image-file"
             />
@@ -178,21 +155,21 @@ export default function ProductDetailClient({
           )}
         </div>
 
-        {galleryImages.length > 1 && (
-          <div className="product-thumbnails" aria-label="Galería de imágenes">
-            {galleryImages.map((image, index) => (
+        {allGalleryImages.length > 1 && (
+          <div className="product-thumbnails">
+            {allGalleryImages.map((image, index) => (
               <button
-                className={`product-thumbnail-button ${
-                  image.src === activeImage ? "is-active" : ""
-                }`}
                 type="button"
-                key={image.id || image.src || index}
-                onClick={() => setActiveImage(image.src)}
-                aria-label={`Ver imagen ${index + 1} de ${decodeHtml(productName)}`}
+                key={image.id || `${image.src}-${index}`}
+                className={`product-thumbnail-button ${
+                  image.src === selectedImage ? "is-active" : ""
+                }`}
+                onClick={() => setSelectedImage(image.src)}
+                aria-label={`Ver imagen ${index + 1}`}
               >
                 <img
                   src={image.thumbnail || image.src}
-                  alt={image.alt || `${decodeHtml(productName)} ${index + 1}`}
+                  alt={image.alt || productName}
                   className="product-thumbnail-file"
                 />
               </button>
@@ -208,29 +185,28 @@ export default function ProductDetailClient({
 
             <div className="variation-swatch-grid">
               {availableVariations.map((variation) => {
-                const name = getVariationName(variation);
-                const variationPrice = getVariationPrice(variation);
-                const variationRegularPrice = getVariationRegularPrice(variation);
-                const isSelected = variation.id.toString() === selectedVariationId;
+                const label = getVariationLabel(variation);
+                const price = numberOrNull(variation.price);
+                const oldPrice = numberOrNull(variation.regularPrice);
+                const selected = variation.id.toString() === selectedVariationId;
 
                 return (
                   <button
                     type="button"
                     key={variation.id}
-                    className={`variation-swatch ${isSelected ? "is-selected" : ""}`}
-                    onClick={() => selectVariation(variation)}
-                    aria-pressed={isSelected}
+                    className={`variation-swatch ${selected ? "is-selected" : ""}`}
+                    onClick={() => chooseVariation(variation)}
+                    aria-pressed={selected}
                   >
                     <span
                       className="variation-swatch-dot"
-                      style={{ backgroundColor: getColorValue(name) }}
-                      aria-hidden="true"
+                      style={{ backgroundColor: getColor(label) }}
                     />
 
                     {variation.image ? (
                       <img
                         src={variation.image}
-                        alt={name}
+                        alt={label}
                         className="variation-swatch-image"
                       />
                     ) : (
@@ -240,18 +216,14 @@ export default function ProductDetailClient({
                     )}
 
                     <span className="variation-swatch-content">
-                      <span className="variation-swatch-name">{name}</span>
+                      <span className="variation-swatch-name">{label}</span>
 
-                      {variationRegularPrice &&
-                        variationPrice &&
-                        variationRegularPrice > variationPrice && (
-                          <del>
-                            {formatMoney(variationRegularPrice, currencySymbol)}
-                          </del>
-                        )}
+                      {oldPrice && price && oldPrice > price && (
+                        <del>{formatMoney(oldPrice, currencySymbol)}</del>
+                      )}
 
                       <strong>
-                        {formatMoney(variationPrice ?? basePrice, currencySymbol)}
+                        {formatMoney(price ?? basePrice, currencySymbol)}
                       </strong>
                     </span>
                   </button>
@@ -261,14 +233,13 @@ export default function ProductDetailClient({
           </section>
         )}
 
-        <p className="product-price product-price-client">
+        <div className="selected-frame-price">
           {selectedRegularPrice && selectedRegularPrice > selectedPrice && (
             <del>{formatMoney(selectedRegularPrice, currencySymbol)}</del>
           )}
-          <span>{formatMoney(selectedPrice, currencySymbol)}</span>
-        </p>
-
-        <p className="product-price-note">Precio del armazón seleccionado</p>
+          <strong>{formatMoney(selectedPrice, currencySymbol)}</strong>
+          <span>Precio del armazón seleccionado</span>
+        </div>
 
         <ProductConfigurator
           productName={productName}
