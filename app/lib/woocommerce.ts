@@ -3,7 +3,7 @@ import "server-only";
 export type WooImage = {
   id: number;
   src: string;
-  alt: string;
+  alt?: string;
 };
 
 export type WooCategory = {
@@ -21,6 +21,19 @@ export type WooAttribute = {
   options: string[];
 };
 
+export type WooPriceData = {
+  price?: string;
+  regular_price?: string;
+  sale_price?: string;
+  currency_code?: string;
+  currency_symbol?: string;
+  currency_minor_unit?: number;
+  currency_decimal_separator?: string;
+  currency_thousand_separator?: string;
+  currency_prefix?: string;
+  currency_suffix?: string;
+};
+
 export type WooVariation = {
   id: number;
   description?: string;
@@ -29,18 +42,15 @@ export type WooVariation = {
   price?: string;
   regular_price?: string;
   sale_price?: string;
-  prices?: {
-    price?: string;
-    regular_price?: string;
-    sale_price?: string;
-    currency_code?: string;
-    currency_symbol?: string;
-    currency_minor_unit?: number;
-    currency_decimal_separator?: string;
-    currency_thousand_separator?: string;
-    currency_prefix?: string;
-    currency_suffix?: string;
-  };
+  stock_status?: string;
+  stock_quantity?: number | null;
+  image?: WooImage | null;
+  attributes?: {
+    id: number;
+    name: string;
+    option: string;
+  }[];
+};
 
 export type WooProduct = {
   id: number;
@@ -52,6 +62,7 @@ export type WooProduct = {
   price?: string;
   regular_price?: string;
   sale_price?: string;
+  prices?: WooPriceData;
   stock_status?: string;
   stock_quantity?: number | null;
   short_description?: string;
@@ -71,8 +82,11 @@ if (!storeUrl) {
   );
 }
 
-async function wooStoreFetch<T>(endpoint: string): Promise<T> {
-  const url = `${storeUrl}/wp-json/wc/store/v1${endpoint}`;
+async function wooStoreFetch<T>(
+  endpoint: string
+): Promise<T> {
+  const url =
+    `${storeUrl}/wp-json/wc/store/v1${endpoint}`;
 
   try {
     const response = await fetch(url, {
@@ -87,7 +101,10 @@ async function wooStoreFetch<T>(endpoint: string): Promise<T> {
 
     if (!response.ok) {
       throw new Error(
-        `WooCommerce Store API respondió HTTP ${response.status}: ${body.slice(0, 300)}`
+        `WooCommerce respondió HTTP ${response.status}: ${body.slice(
+          0,
+          300
+        )}`
       );
     }
 
@@ -106,18 +123,22 @@ async function wooStoreFetch<T>(endpoint: string): Promise<T> {
         : "Error de red desconocido";
 
     const cause = errorWithCause.cause
-      ? ` Causa: ${errorWithCause.cause.code || ""} ${
+      ? ` Causa: ${
+          errorWithCause.cause.code || ""
+        } ${
           errorWithCause.cause.message || ""
         }`
       : "";
 
     throw new Error(
-      `No se pudo cargar el catálogo desde WooCommerce en ${url}. ${detail}${cause}`
+      `No se pudo cargar WooCommerce en ${url}. ${detail}${cause}`
     );
   }
 }
 
-export async function getWooProducts(): Promise<WooProduct[]> {
+export async function getWooProducts(): Promise<
+  WooProduct[]
+> {
   return wooStoreFetch<WooProduct[]>(
     "/products?per_page=24&catalog_visibility=visible"
   );
@@ -140,7 +161,9 @@ export async function getWooVariations(
     `/products/${productId}`
   );
 
-  return (product.variations || []).map((variationId) => ({
-    id: variationId,
-  }));
+  return (product.variations || []).map(
+    (variationId) => ({
+      id: variationId,
+    })
+  );
 }
