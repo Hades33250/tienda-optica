@@ -89,11 +89,26 @@ export default async function Home() {
                 "Lentes y armazones";
 
               const price =
-                product.sale_price || product.price;
+  product.prices?.sale_price ||
+  product.prices?.price ||
+  product.sale_price ||
+  product.price;
+
+const currencySymbol =
+  product.prices?.currency_symbol || "$";
+
+const currencyMinorUnit =
+  product.prices?.currency_minor_unit ?? 2;
 
               const formattedPrice = price
-                ? `$${Number(price).toLocaleString("es-MX")} MXN`
-                : "Consultar precio";
+  ? `${currencySymbol}${(
+      Number(price) /
+      10 ** currencyMinorUnit
+    ).toLocaleString("es-MX", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })} MXN`
+  : "Consultar precio";
 
               return (
                 <article
