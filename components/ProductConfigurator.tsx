@@ -9,10 +9,12 @@ export type ProductOption = {
   regularPrice?: string;
   stockStatus?: string;
   image?: string;
-  attributes?: {
-    name: string;
-    option: string;
-  }[];
+ attributes?: {
+  name?: string;
+  slug?: string;
+  option?: string;
+  value?: string;
+}[];
 };
 
 type LensOption = {
@@ -125,10 +127,29 @@ function decodeHtml(value = "") {
 
 function variationLabel(variation: ProductOption) {
   const attributes = variation.attributes
-    ?.map((attribute) => `${attribute.name}: ${attribute.option}`)
+    ?.map((attribute) => {
+      const attributeName =
+        attribute.name ||
+        (attribute as { slug?: string }).slug ||
+        "Atributo";
+
+      const attributeValue =
+        attribute.option ||
+        (attribute as { value?: string }).value ||
+        "";
+
+      if (!attributeValue || attributeValue === "undefined") {
+        return "";
+      }
+
+      return `${attributeName}: ${attributeValue}`;
+    })
+    .filter(Boolean)
     .join(" · ");
 
-  return decodeHtml(attributes || variation.name || `Opción ${variation.id}`);
+  return decodeHtml(
+    attributes || variation.name || `Opción ${variation.id}`
+  );
 }
 
 function parseVariationPrice(value?: string) {
