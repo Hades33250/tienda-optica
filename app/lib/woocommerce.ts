@@ -23,16 +23,16 @@ export type WooAttribute = {
 
 export type WooVariation = {
   id: number;
-  description: string;
-  permalink: string;
-  sku: string;
-  price: string;
-  regular_price: string;
-  sale_price: string;
-  stock_status: string;
-  stock_quantity: number | null;
-  image: WooImage | null;
-  attributes: {
+  description?: string;
+  permalink?: string;
+  sku?: string;
+  price?: string;
+  regular_price?: string;
+  sale_price?: string;
+  stock_status?: string;
+  stock_quantity?: number | null;
+  image?: WooImage | null;
+  attributes?: {
     id: number;
     name: string;
     option: string;
@@ -43,52 +43,39 @@ export type WooProduct = {
   id: number;
   name: string;
   slug: string;
-  type: string;
-  permalink: string;
-  sku: string;
-  price: string;
-  regular_price: string;
-  sale_price: string;
-  stock_status: string;
-  stock_quantity: number | null;
-  short_description: string;
-  description: string;
-  images: WooImage[];
-  categories: WooCategory[];
-  attributes: WooAttribute[];
-  variations: number[];
+  type?: string;
+  permalink?: string;
+  sku?: string;
+  price?: string;
+  regular_price?: string;
+  sale_price?: string;
+  stock_status?: string;
+  stock_quantity?: number | null;
+  short_description?: string;
+  description?: string;
+  images?: WooImage[];
+  categories?: WooCategory[];
+  attributes?: WooAttribute[];
+  variations?: number[];
 };
 
 const rawStoreUrl = process.env.WOOCOMMERCE_URL || "";
 const storeUrl = rawStoreUrl.replace(/\/+$/, "");
 
-const consumerKey =
-  process.env.WOOCOMMERCE_CONSUMER_KEY?.trim();
-
-const consumerSecret =
-  process.env.WOOCOMMERCE_CONSUMER_SECRET?.trim();
-
-if (!storeUrl || !consumerKey || !consumerSecret) {
+if (!storeUrl) {
   throw new Error(
-    "Faltan las variables de entorno de WooCommerce en Easypanel."
+    "Falta WOOCOMMERCE_URL en las variables de entorno de Easypanel."
   );
 }
 
-function getAuthorizationHeader() {
-  const credentials = `${consumerKey}:${consumerSecret}`;
-
-  return `Basic ${Buffer.from(credentials).toString("base64")}`;
-}
-
-async function wooFetch<T>(endpoint: string): Promise<T> {
-  const url = `${storeUrl}/wp-json/wc/v3${endpoint}`;
+async function wooStoreFetch<T>(endpoint: string): Promise<T> {
+  const url = `${storeUrl}/wp-json/wc/store/v1${endpoint}`;
 
   try {
     const response = await fetch(url, {
       method: "GET",
       headers: {
         Accept: "application/json",
-        Authorization: getAuthorizationHeader(),
       },
       cache: "no-store",
     });
@@ -97,17 +84,11 @@ async function wooFetch<T>(endpoint: string): Promise<T> {
 
     if (!response.ok) {
       throw new Error(
-        `WooCommerce respondió HTTP ${response.status}: ${body.slice(0, 300)}`
+        `WooCommerce Store API respondió HTTP ${response.status}: ${body.slice(0, 300)}`
       );
     }
 
-    try {
-      return JSON.parse(body) as T;
-    } catch {
-      throw new Error(
-        `WooCommerce devolvió una respuesta que no es JSON: ${body.slice(0, 300)}`
-      );
-    }
+    return JSON.parse(body) as T;
   } catch (error) {
     const errorWithCause = error as Error & {
       cause?: {
@@ -128,22 +109,22 @@ async function wooFetch<T>(endpoint: string): Promise<T> {
       : "";
 
     throw new Error(
-      `No se pudo conectar con WooCommerce en ${url}. ${detail}${cause}`
+      `No se pudo cargar el catálogo desde WooCommerce en ${url}. ${detail}${cause}`
     );
   }
 }
 
 export async function getWooProducts(): Promise<WooProduct[]> {
-  return wooFetch<WooProduct[]>(
-    "/products?status=publish&per_page=24"
+  return wooStoreFetch<WooProduct[]>(
+    "/products?per_page=24&catalog_visibility=visible"
   );
 }
 
 export async function getWooProductBySlug(
   slug: string
 ): Promise<WooProduct | null> {
-  const products = await wooFetch<WooProduct[]>(
-    `/products?slug=${encodeURIComponent(slug)}&status=publish`
+  const products = await wooStoreFetch<WooProduct[]>(
+    `/products?slug=${encodeURIComponent(slug)}`
   );
 
   return products[0] || null;
@@ -152,7 +133,11 @@ export async function getWooProductBySlug(
 export async function getWooVariations(
   productId: number
 ): Promise<WooVariation[]> {
-  return wooFetch<WooVariation[]>(
-    `/products/${productId}/variations?per_page=100`
+  const product = await wooStoreFetch<WooProduct>(
+    `/products/${productId}`
   );
+
+  return (product.variations || []).map((variationId) => ({
+    id: variationId,
+  }));
 }
