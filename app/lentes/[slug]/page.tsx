@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ProductConfigurator from "../../../components/ProductConfigurator";
+
 type StoreImage = {
   id?: number;
   src: string;
@@ -15,18 +16,22 @@ type StoreAttribute = {
   options?: string[];
 };
 
+type StorePrices = {
+  price?: string;
+  regular_price?: string;
+  sale_price?: string;
+  currency_minor_unit?: number;
+  currency_symbol?: string;
+};
+
 type StoreProduct = {
   id: number;
   name: string;
   slug: string;
   description?: string;
   short_description?: string;
-  price?: string;
-  regular_price?: string;
-  sale_price?: string;
+  prices?: StorePrices;
   on_sale?: boolean;
-  currency_minor_unit?: number;
-  currency_symbol?: string;
   images?: StoreImage[];
   attributes?: StoreAttribute[];
   stock_status?: string;
@@ -37,9 +42,7 @@ type StoreProduct = {
 type StoreVariation = {
   id: number;
   sku?: string;
-  price?: string;
-  regular_price?: string;
-  sale_price?: string;
+  prices?: StorePrices;
   stock_status?: string;
   image?: StoreImage;
   attributes?: {
@@ -78,11 +81,20 @@ function decodeHtml(value = "") {
     .replace(/&#8212;/g, "—");
 }
 
-function getProductPrice(product: StoreProduct) {
-  const price = Number(product.price || product.sale_price || product.regular_price || 0);
-  const minorUnit = product.currency_minor_unit ?? 2;
+function getPriceFromStorePrices(prices?: StorePrices) {
+  if (!prices) {
+    return 0;
+  }
 
-  return minorUnit > 0 ? price / 10 ** minorUnit : price;
+  const rawPrice = prices.sale_price || prices.price || prices.regular_price || "0";
+  const amount = Number(rawPrice);
+  const minorUnit = prices.currency_minor_unit ?? 2;
+
+  if (!Number.isFinite(amount)) {
+    return 0;
+  }
+
+  return amount / 10 ** minorUnit;
 }
 
 function formatMoney(value: number, symbol = "$") {
@@ -136,11 +148,16 @@ export default async function ProductPage({ params }: PageProps) {
   }
 
   const variations = await getVariations(product.id);
-  const price = getProductPrice(product);
-  const currencySymbol = product.currency_symbol || "$";
+  const price = getPriceFromStorePrices(product.prices);
+  const currencySymbol = product.prices?.currency_symbol || "$";
   const description = stripHtml(product.description || product.short_description || "");
   const mainImage = product.images?.[0];
   const productUrl = product.permalink || `${STORE_URL}/producto/${product.slug}/`;
+  const regularPrice = getPriceFromStorePrices({
+    ...product.prices,
+    price: product.prices?.regular_price,
+    sale_price: undefined,
+  });
 
   return (
     <main className="product-page">
@@ -191,14 +208,8 @@ export default async function ProductPage({ params }: PageProps) {
           <h1>{decodeHtml(product.name)}</h1>
 
           <p className="product-price">
-            {product.on_sale && product.regular_price && (
-              <del>
-                {formatMoney(
-                  Number(product.regular_price) /
-                    10 ** (product.currency_minor_unit ?? 2),
-                  currencySymbol
-                )}
-              </del>
+            {product.on_sale && regularPrice > price && (
+              <del>{formatMoney(regularPrice, currencySymbol)}</del>
             )}
             <span>{formatMoney(price, currencySymbol)}</span>
           </p>
@@ -231,8 +242,8 @@ export default async function ProductPage({ params }: PageProps) {
             variations={variations.map((variation) => ({
               id: variation.id,
               name: variation.sku || "Opción disponible",
-              price: variation.price,
-              regularPrice: variation.regular_price,
+              price: variation.prices?.price,
+              regularPrice: variation.prices?.regular_price,
               stockStatus: variation.stock_status,
               image: variation.image?.src,
               attributes: variation.attributes || [],
