@@ -94,7 +94,21 @@ export default async function ProductPage({
   const mainImage = product.images?.[0];
   const category =
     product.categories?.[0]?.name || "Lentes y armazones";
-  const price = product.sale_price || product.price;
+ const price =
+  product.prices?.sale_price ||
+  product.prices?.price ||
+  product.sale_price ||
+  product.price;
+
+const regularPrice =
+  product.prices?.regular_price ||
+  product.regular_price;
+
+const currencySymbol =
+  product.prices?.currency_symbol || "$";
+
+const currencyMinorUnit =
+  product.prices?.currency_minor_unit ?? 2;
   const description = cleanHtml(
     product.description || product.short_description
   );
@@ -135,18 +149,26 @@ export default async function ProductPage({
             <h1>{product.name}</h1>
 
             <div className="product-prices">
-              {product.sale_price &&
-                product.regular_price &&
-                product.sale_price !== product.regular_price && (
-                  <span className="product-old-price">
-                    {formatPrice(product.regular_price)}
-                  </span>
-                )}
+  {price &&
+    regularPrice &&
+    price !== regularPrice && (
+      <span className="product-old-price">
+        {formatPrice(
+          regularPrice,
+          currencySymbol,
+          currencyMinorUnit
+        )}
+      </span>
+    )}
 
-              <span className="product-current-price">
-                {formatPrice(price)}
-              </span>
-            </div>
+  <span className="product-current-price">
+    {formatPrice(
+      price,
+      currencySymbol,
+      currencyMinorUnit
+    )}
+  </span>
+</div>
 
             <div className="product-description">
               <p>
