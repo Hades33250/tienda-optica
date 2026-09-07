@@ -1,8 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import ProductConfigurator from "../../components/ProductConfigurator";
-
+import ProductConfigurator from "../../../components/ProductConfigurator";
 type StoreImage = {
   id?: number;
   src: string;
