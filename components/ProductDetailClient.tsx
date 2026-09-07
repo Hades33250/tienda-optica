@@ -168,7 +168,7 @@ export default function ProductDetailClient({
                 aria-label={`Ver imagen ${index + 1}`}
               >
                 <img
-                  src={image.thumbnail || image.src}
+                  src={image.src}
                   alt={image.alt || productName}
                   className="product-thumbnail-file"
                 />
