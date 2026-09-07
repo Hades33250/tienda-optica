@@ -1,281 +1,246 @@
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import ProductConfigurator from "../../components/ProductConfigurator";
-import {
-  getWooProductBySlug,
-  getWooVariations,
-} from "../../lib/woocommerce";
 
-type ProductPageProps = {
+type StoreImage = {
+  id?: number;
+  src: string;
+  alt?: string;
+  thumbnail?: string;
+};
+
+type StoreAttribute = {
+  id?: number;
+  name: string;
+  options?: string[];
+};
+
+type StoreProduct = {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  short_description?: string;
+  price?: string;
+  regular_price?: string;
+  sale_price?: string;
+  on_sale?: boolean;
+  currency_minor_unit?: number;
+  currency_symbol?: string;
+  images?: StoreImage[];
+  attributes?: StoreAttribute[];
+  stock_status?: string;
+  sku?: string;
+  permalink?: string;
+};
+
+type StoreVariation = {
+  id: number;
+  sku?: string;
+  price?: string;
+  regular_price?: string;
+  sale_price?: string;
+  stock_status?: string;
+  image?: StoreImage;
+  attributes?: {
+    name: string;
+    option: string;
+  }[];
+};
+
+type PageProps = {
   params: Promise<{
     slug: string;
   }>;
 };
 
-function formatPrice(
-  price?: string,
-  currencySymbol = "$",
-  minorUnit = 2
-) {
-  if (!price) {
-    return "Consultar precio";
-  }
+const STORE_URL = process.env.WOOCOMMERCE_URL?.replace(/\/$/, "") || "";
 
-  const rawValue = Number(price);
+function stripHtml(html = "") {
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&#8211;/g, "–")
+    .replace(/&#8212;/g, "—")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
-  if (Number.isNaN(rawValue)) {
-    return "Consultar precio";
-  }
+function decodeHtml(value = "") {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&#8211;/g, "–")
+    .replace(/&#8212;/g, "—");
+}
 
-  const value = rawValue / 10 ** minorUnit;
+function getProductPrice(product: StoreProduct) {
+  const price = Number(product.price || product.sale_price || product.regular_price || 0);
+  const minorUnit = product.currency_minor_unit ?? 2;
 
-  return `${currencySymbol}${value.toLocaleString("es-MX", {
+  return minorUnit > 0 ? price / 10 ** minorUnit : price;
+}
+
+function formatMoney(value: number, symbol = "$") {
+  return `${symbol}${value.toLocaleString("es-MX", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })} MXN`;
 }
 
-function cleanHtml(html = "") {
-  return html
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n")
-    .replace(/<[^>]*>/g, "")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&quot;/gi, '"')
-    .trim();
+async function getProduct(slug: string): Promise<StoreProduct | null> {
+  if (!STORE_URL) {
+    return null;
+  }
+
+  const response = await fetch(
+    `${STORE_URL}/wp-json/wc/store/v1/products?slug=${encodeURIComponent(slug)}`,
+    { next: { revalidate: 60 } }
+  );
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const products = (await response.json()) as StoreProduct[];
+  return products[0] || null;
 }
 
-export default async function ProductPage({
-  params,
-}: ProductPageProps) {
-  const { slug } = await params;
-
-  let product = null;
-  let errorMessage = "";
-
-  try {
-    product = await getWooProductBySlug(slug);
-  } catch (error) {
-    console.error("Error cargando producto:", error);
-
-    errorMessage =
-      error instanceof Error
-        ? error.message
-        : "No fue posible consultar este producto.";
+async function getVariations(productId: number): Promise<StoreVariation[]> {
+  if (!STORE_URL) {
+    return [];
   }
+
+  const response = await fetch(
+    `${STORE_URL}/wp-json/wc/store/v1/products/${productId}/variations`,
+    { next: { revalidate: 60 } }
+  );
+
+  if (!response.ok) {
+    return [];
+  }
+
+  return (await response.json()) as StoreVariation[];
+}
+
+export default async function ProductPage({ params }: PageProps) {
+  const { slug } = await params;
+  const product = await getProduct(slug);
 
   if (!product) {
-    return (
-      <main className="product-page">
-        <div className="product-error">
-          <p className="eyebrow">PRODUCTO</p>
-
-          <h1>No fue posible cargar este producto</h1>
-
-          <p>Slug consultado:</p>
-
-          <code>{slug}</code>
-
-          {errorMessage && (
-            <p className="product-error-detail">
-              {errorMessage}
-            </p>
-          )}
-
-          <Link
-            href="/"
-            className="button button-primary"
-          >
-            Volver al catálogo
-          </Link>
-        </div>
-      </main>
-    );
+    notFound();
   }
 
-  let variations = [];
-
-  if (product.type === "variable") {
-    try {
-      variations = await getWooVariations(product.id);
-    } catch (error) {
-      console.error("Error cargando variaciones:", error);
-    }
-  }
-
+  const variations = await getVariations(product.id);
+  const price = getProductPrice(product);
+  const currencySymbol = product.currency_symbol || "$";
+  const description = stripHtml(product.description || product.short_description || "");
   const mainImage = product.images?.[0];
-
-  const category =
-    product.categories?.[0]?.name ||
-    "Lentes y armazones";
-
-  const price =
-    product.prices?.sale_price ||
-    product.prices?.price ||
-    product.sale_price ||
-    product.price;
-
-  const regularPrice =
-    product.prices?.regular_price ||
-    product.regular_price;
-
-  const currencySymbol =
-    product.prices?.currency_symbol || "$";
-
-  const currencyMinorUnit =
-    product.prices?.currency_minor_unit ?? 2;
-
-  const description = cleanHtml(
-    product.description || product.short_description
-  );
+  const productUrl = product.permalink || `${STORE_URL}/producto/${product.slug}/`;
 
   return (
     <main className="product-page">
-      <div className="product-container">
-        <nav className="product-breadcrumb">
-          <Link href="/">Inicio</Link>
-          <span>/</span>
-          <span>{category}</span>
-          <span>/</span>
-          <span>{product.name}</span>
-        </nav>
+      <nav className="product-breadcrumb" aria-label="Navegación">
+        <Link href="/lentes">Catálogo</Link>
+        <span aria-hidden="true">/</span>
+        <span>{decodeHtml(product.name)}</span>
+      </nav>
 
-        <section className="product-detail">
-          <div className="product-detail-gallery">
-            <div className="product-detail-image">
-              {mainImage?.src ? (
-                <Image
-                  src={mainImage.src}
-                  alt={mainImage.alt || product.name}
-                  width={900}
-                  height={900}
-                  priority
-                  unoptimized
-                  className="product-detail-main-image"
-                />
-              ) : (
-                <div className="product-placeholder">
-                  👓
-                </div>
-              )}
-            </div>
+      <section className="product-detail">
+        <div className="product-gallery">
+          <div className="product-main-image">
+            {mainImage?.src ? (
+              <Image
+                src={mainImage.src}
+                alt={mainImage.alt || decodeHtml(product.name)}
+                width={900}
+                height={700}
+                priority
+                sizes="(max-width: 900px) 100vw, 50vw"
+              />
+            ) : (
+              <div className="product-image-placeholder">
+                Imagen no disponible
+              </div>
+            )}
           </div>
 
-          <div className="product-detail-content">
-            <p className="product-category">
-              {category}
-            </p>
-
-            <h1>{product.name}</h1>
-
-            <div className="product-prices">
-              {price &&
-                regularPrice &&
-                price !== regularPrice && (
-                  <span className="product-old-price">
-                    {formatPrice(
-                      regularPrice,
-                      currencySymbol,
-                      currencyMinorUnit
-                    )}
-                  </span>
-                )}
-
-              <span className="product-current-price">
-                {formatPrice(
-                  price,
-                  currencySymbol,
-                  currencyMinorUnit
-                )}
-              </span>
-            </div>
-
-            <div className="product-description">
-              <p>
-                {description ||
-                  "Consulta la disponibilidad y opciones de personalización para este armazón."}
-              </p>
-            </div>
-
-            {product.sku && (
-              <p className="product-sku">
-                SKU: {product.sku}
-              </p>
-            )}
-
-            <p className="product-availability">
-              {product.stock_status === "instock"
-                ? "Disponible"
-                : "Consulta disponibilidad"}
-            </p>
-
-            {variations.length > 0 && (
-              <section className="product-variations">
-                <h2>Colores disponibles</h2>
-
-                <div className="variation-list">
-                  {variations.map((variation) => {
-                    const attributes =
-                      variation.attributes
-                        ?.map(
-                          (attribute) =>
-                            `${attribute.name}: ${attribute.option}`
-                        )
-                        .join(", ") ||
-                      variation.sku ||
-                      "Opción disponible";
-
-                    const variationPrice =
-                      variation.sale_price ||
-                      variation.price;
-
-                    return (
-                      <article
-                        className="variation-option"
-                        key={variation.id}
-                      >
-                        <div>
-                          <p>{attributes}</p>
-
-                          <small>
-                            {formatPrice(variationPrice)}
-                          </small>
-
-                          <small>
-                            {variation.stock_status ===
-                            "instock"
-                              ? "Disponible"
-                              : "No disponible"}
-                          </small>
-                        </div>
-                      </article>
-                    );
-                  })}
+          {product.images && product.images.length > 1 && (
+            <div className="product-thumbnails">
+              {product.images.slice(1).map((image, index) => (
+                <div className="product-thumbnail" key={image.id || index}>
+                  <Image
+                    src={image.thumbnail || image.src}
+                    alt={image.alt || `${decodeHtml(product.name)} ${index + 2}`}
+                    width={110}
+                    height={90}
+                  />
                 </div>
-              </section>
-            )}
+              ))}
+            </div>
+          )}
+        </div>
 
-            <ProductConfigurator
-  productName={product.name}
-  productUrl={`${process.env.WOOCOMMERCE_URL || ""}/producto/${product.slug}/`}
-  basePrice={
-    Number(price || 0) /
-    10 ** currencyMinorUnit
-  }
-  currencySymbol={currencySymbol}
-  variations={variations.map((variation) => ({
-    id: variation.id,
-    name: variation.sku || "Opción disponible",
-    price: variation.price,
-    regularPrice: variation.regular_price,
-    stockStatus: variation.stock_status,
-    image: variation.image?.src,
-    attributes: (variation.attributes || []).map(
-      (attribute) => ({
-        name: attribute.name,
-        option: attribute.option,
-      })
-    ),
-  }))}
-/>
+        <div className="product-info">
+          {product.sku && <p className="product-sku">Modelo: {product.sku}</p>}
+
+          <h1>{decodeHtml(product.name)}</h1>
+
+          <p className="product-price">
+            {product.on_sale && product.regular_price && (
+              <del>
+                {formatMoney(
+                  Number(product.regular_price) /
+                    10 ** (product.currency_minor_unit ?? 2),
+                  currencySymbol
+                )}
+              </del>
+            )}
+            <span>{formatMoney(price, currencySymbol)}</span>
+          </p>
+
+          <p className="product-price-note">Precio del armazón</p>
+
+          {description && <p className="product-description">{description}</p>}
+
+          {product.attributes && product.attributes.length > 0 && (
+            <section className="product-specifications">
+              <h2>Detalles del armazón</h2>
+              <dl>
+                {product.attributes
+                  .filter((attribute) => attribute.options && attribute.options.length > 0)
+                  .map((attribute) => (
+                    <div key={attribute.id || attribute.name}>
+                      <dt>{attribute.name}</dt>
+                      <dd>{attribute.options?.join(", ")}</dd>
+                    </div>
+                  ))}
+              </dl>
+            </section>
+          )}
+
+          <ProductConfigurator
+            productName={decodeHtml(product.name)}
+            productUrl={productUrl}
+            basePrice={price}
+            currencySymbol={currencySymbol}
+            variations={variations.map((variation) => ({
+              id: variation.id,
+              name: variation.sku || "Opción disponible",
+              price: variation.price,
+              regularPrice: variation.regular_price,
+              stockStatus: variation.stock_status,
+              image: variation.image?.src,
+              attributes: variation.attributes || [],
+            }))}
+          />
+        </div>
+      </section>
+    </main>
+  );
+}
