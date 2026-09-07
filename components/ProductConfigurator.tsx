@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState } from "react";
@@ -30,6 +29,7 @@ type ProductConfiguratorProps = {
   basePrice: number;
   currencySymbol?: string;
   variations?: ProductOption[];
+  onVariationImageChange?: (imageUrl: string | null) => void;
 };
 
 const lensOptions: LensOption[] = [
@@ -106,6 +106,7 @@ export default function ProductConfigurator({
   basePrice,
   currencySymbol = "$",
   variations = [],
+  onVariationImageChange,
 }: ProductConfiguratorProps) {
   const availableVariations = variations.filter(
     (variation) => variation.stockStatus !== "outofstock"
@@ -132,6 +133,16 @@ export default function ProductConfigurator({
   const framePrice = selectedVariationPrice ?? basePrice;
   const lensPrice = purchaseType === "prescription" ? selectedLens?.price || 0 : 0;
   const total = framePrice + lensPrice;
+
+  function handleVariationChange(variationId: string) {
+    setSelectedVariationId(variationId);
+
+    const variation = availableVariations.find(
+      (item) => item.id.toString() === variationId
+    );
+
+    onVariationImageChange?.(variation?.image || null);
+  }
 
   const whatsappUrl = useMemo(() => {
     const lines = [
@@ -185,7 +196,7 @@ export default function ProductConfigurator({
           <select
             id="frame-variation"
             value={selectedVariationId}
-            onChange={(event) => setSelectedVariationId(event.target.value)}
+            onChange={(event) => handleVariationChange(event.target.value)}
           >
             {availableVariations.map((variation) => {
               const variationPrice = parseVariationPrice(variation.price);
