@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import ProductConfigurator from "../../components/ProductConfigurator";
 import {
   getWooProductBySlug,
   getWooVariations,
@@ -255,52 +256,26 @@ export default async function ProductPage({
               </section>
             )}
 
-            <section className="prescription-section">
-              <h2>Personaliza tus lentes</h2>
-
-              <label>
-                <input
-                  type="radio"
-                  name="purchase-type"
-                  defaultChecked
-                />
-                Solo armazón
-              </label>
-
-              <label>
-                <input
-                  type="radio"
-                  name="purchase-type"
-                />
-                Armazón con lentes graduados
-              </label>
-
-              <label>
-                <input
-                  type="checkbox"
-                  name="eye-exam"
-                />
-                Quiero agendar un examen visual
-              </label>
-            </section>
-
-            <div className="product-actions">
-              <a
-                className="button button-primary"
-                href="https://wa.me/525618452614"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Solicitar información por WhatsApp
-              </a>
-            </div>
-
-            <Link href="/" className="back-link">
-              ← Volver al catálogo
-            </Link>
-          </div>
-        </section>
-      </div>
-    </main>
-  );
-}
+            <ProductConfigurator
+  productName={product.name}
+  productUrl={`${process.env.WOOCOMMERCE_URL || ""}/producto/${product.slug}/`}
+  basePrice={
+    Number(price || 0) /
+    10 ** currencyMinorUnit
+  }
+  currencySymbol={currencySymbol}
+  variations={variations.map((variation) => ({
+    id: variation.id,
+    name: variation.sku || "Opción disponible",
+    price: variation.price,
+    regularPrice: variation.regular_price,
+    stockStatus: variation.stock_status,
+    image: variation.image?.src,
+    attributes: (variation.attributes || []).map(
+      (attribute) => ({
+        name: attribute.name,
+        option: attribute.option,
+      })
+    ),
+  }))}
+/>
