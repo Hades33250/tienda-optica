@@ -564,3 +564,115 @@ footer {
     font-size: 38px;
   }
 }
+
+.lens-configurator {
+  margin-top: 32px;
+  padding-top: 26px;
+  border-top: 1px solid #dbe8e6;
+}
+
+.lens-configurator h2 {
+  margin: 0 0 20px;
+  font-size: 1.4rem;
+}
+
+.configurator-field {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0;
+  padding: 0;
+  border: 0;
+}
+
+.configurator-field label,
+.configurator-field legend {
+  color: #18393a;
+  font-weight: 800;
+}
+
+.configurator-field select {
+  width: 100%;
+  border: 1px solid #c8ded9;
+  border-radius: 10px;
+  background: #fff;
+  color: #102a2b;
+  font: inherit;
+  padding: 13px 14px;
+}
+
+.configurator-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  color: #334155;
+  cursor: pointer;
+}
+
+.configurator-choice input {
+  accent-color: #109d89;
+}
+
+.configurator-exam {
+  margin: 22px 0;
+}
+
+.configurator-note,
+.configurator-disclaimer {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.configurator-total {
+  display: grid;
+  gap: 10px;
+  margin: 24px 0 14px;
+  padding: 18px;
+  border: 1px solid #cce6e1;
+  border-radius: 14px;
+  background: #f1fbf9;
+}
+
+.configurator-total > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  color: #41595a;
+}
+
+.configurator-total strong {
+  color: #102a2b;
+}
+
+.configurator-total-final {
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 1px solid #cce6e1;
+  color: #0f766e !important;
+  font-size: 1.12rem;
+}
+
+.configurator-total-final strong {
+  color: #0f766e;
+  font-size: 1.22rem;
+}
+
+.configurator-warning {
+  margin: 14px 0;
+  color: #b45309;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.configurator-whatsapp {
+  width: 100%;
+  margin-top: 12px;
+  text-align: center;
+}
+
+.configurator-disclaimer {
+  margin-top: 12px;
+  text-align: center;
+}
