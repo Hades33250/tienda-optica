@@ -23,16 +23,24 @@ type StorePrices = {
   currency_symbol?: string;
 };
 
+type StoreVariationAttribute = {
+  name?: string;
+  slug?: string;
+  option?: string;
+  value?: string;
+};
+
 type StoreVariation = {
   id: number;
   sku?: string;
+  price?: string;
+  regular_price?: string;
+  sale_price?: string;
+  on_sale?: boolean;
   prices?: StorePrices;
   stock_status?: string;
   image?: StoreImage;
-  attributes?: {
-    name: string;
-    option: string;
-  }[];
+  attributes?: StoreVariationAttribute[];
 };
 
 type StoreProduct = {
@@ -113,6 +121,31 @@ function getRegularPriceFromStorePrices(prices?: StorePrices) {
   return amount / 10 ** minorUnit;
 }
 
+function getDirectPrice(value?: string) {
+  const amount = Number(value || 0);
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function getVariationSalePrice(variation: StoreVariation) {
+  if (variation.prices) {
+    return getPriceFromStorePrices(variation.prices);
+  }
+
+  return (
+    getDirectPrice(variation.sale_price) ||
+    getDirectPrice(variation.price) ||
+    getDirectPrice(variation.regular_price)
+  );
+}
+
+function getVariationRegularPrice(variation: StoreVariation) {
+  if (variation.prices) {
+    return getRegularPriceFromStorePrices(variation.prices);
+  }
+
+  return getDirectPrice(variation.regular_price);
+}
+
 function formatMoney(value: number, symbol = "$") {
   return `${symbol}${value.toLocaleString("es-MX", {
     minimumFractionDigits: 2,
@@ -176,19 +209,20 @@ export default async function ProductPage({ params }: PageProps) {
   const mainImage = product.images?.[0];
   const productUrl = product.permalink || `${STORE_URL}/producto/${product.slug}/`;
 
-  const configuratorVariations = variations.map((variation) => ({
-    id: variation.id,
-    name: variation.sku || "Opción disponible",
-    price: variation.prices
-      ? getPriceFromStorePrices(variation.prices).toString()
-      : undefined,
-    regularPrice: variation.prices?.regular_price
-      ? getRegularPriceFromStorePrices(variation.prices).toString()
-      : undefined,
-    stockStatus: variation.stock_status,
-    image: variation.image?.src || mainImage?.src,
-    attributes: variation.attributes || [],
-  }));
+  const configuratorVariations = variations.map((variation) => {
+    const salePrice = getVariationSalePrice(variation);
+    const normalPrice = getVariationRegularPrice(variation);
+
+    return {
+      id: variation.id,
+      name: variation.sku || "Opción disponible",
+      price: salePrice > 0 ? salePrice.toString() : undefined,
+      regularPrice: normalPrice > 0 ? normalPrice.toString() : undefined,
+      stockStatus: variation.stock_status,
+      image: variation.image?.src || mainImage?.src,
+      attributes: variation.attributes || [],
+    };
+  });
 
   return (
     <main className="product-page">
