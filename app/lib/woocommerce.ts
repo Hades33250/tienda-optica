@@ -29,15 +29,18 @@ export type WooVariation = {
   price?: string;
   regular_price?: string;
   sale_price?: string;
-  stock_status?: string;
-  stock_quantity?: number | null;
-  image?: WooImage | null;
-  attributes?: {
-    id: number;
-    name: string;
-    option: string;
-  }[];
-};
+  prices?: {
+    price?: string;
+    regular_price?: string;
+    sale_price?: string;
+    currency_code?: string;
+    currency_symbol?: string;
+    currency_minor_unit?: number;
+    currency_decimal_separator?: string;
+    currency_thousand_separator?: string;
+    currency_prefix?: string;
+    currency_suffix?: string;
+  };
 
 export type WooProduct = {
   id: number;
