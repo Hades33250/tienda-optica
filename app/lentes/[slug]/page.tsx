@@ -33,6 +33,7 @@ function formatPrice(
     maximumFractionDigits: 2,
   })} MXN`;
 }
+
 function cleanHtml(html = "") {
   return html
     .replace(/<br\s*\/?>/gi, "\n")
@@ -81,7 +82,10 @@ export default async function ProductPage({
             </p>
           )}
 
-          <Link href="/" className="button button-primary">
+          <Link
+            href="/"
+            className="button button-primary"
+          >
             Volver al catálogo
           </Link>
         </div>
@@ -100,23 +104,27 @@ export default async function ProductPage({
   }
 
   const mainImage = product.images?.[0];
+
   const category =
-    product.categories?.[0]?.name || "Lentes y armazones";
- const price =
-  product.prices?.sale_price ||
-  product.prices?.price ||
-  product.sale_price ||
-  product.price;
+    product.categories?.[0]?.name ||
+    "Lentes y armazones";
 
-const regularPrice =
-  product.prices?.regular_price ||
-  product.regular_price;
+  const price =
+    product.prices?.sale_price ||
+    product.prices?.price ||
+    product.sale_price ||
+    product.price;
 
-const currencySymbol =
-  product.prices?.currency_symbol || "$";
+  const regularPrice =
+    product.prices?.regular_price ||
+    product.regular_price;
 
-const currencyMinorUnit =
-  product.prices?.currency_minor_unit ?? 2;
+  const currencySymbol =
+    product.prices?.currency_symbol || "$";
+
+  const currencyMinorUnit =
+    product.prices?.currency_minor_unit ?? 2;
+
   const description = cleanHtml(
     product.description || product.short_description
   );
@@ -146,37 +154,41 @@ const currencyMinorUnit =
                   className="product-detail-main-image"
                 />
               ) : (
-                <div className="product-placeholder">👓</div>
+                <div className="product-placeholder">
+                  👓
+                </div>
               )}
             </div>
           </div>
 
           <div className="product-detail-content">
-            <p className="product-category">{category}</p>
+            <p className="product-category">
+              {category}
+            </p>
 
             <h1>{product.name}</h1>
 
             <div className="product-prices">
-  {price &&
-    regularPrice &&
-    price !== regularPrice && (
-      <span className="product-old-price">
-        {formatPrice(
-          regularPrice,
-          currencySymbol,
-          currencyMinorUnit
-        )}
-      </span>
-    )}
+              {price &&
+                regularPrice &&
+                price !== regularPrice && (
+                  <span className="product-old-price">
+                    {formatPrice(
+                      regularPrice,
+                      currencySymbol,
+                      currencyMinorUnit
+                    )}
+                  </span>
+                )}
 
-  <span className="product-current-price">
-    {formatPrice(
-      price,
-      currencySymbol,
-      currencyMinorUnit
-    )}
-  </span>
-</div>
+              <span className="product-current-price">
+                {formatPrice(
+                  price,
+                  currencySymbol,
+                  currencyMinorUnit
+                )}
+              </span>
+            </div>
 
             <div className="product-description">
               <p>
@@ -214,27 +226,14 @@ const currencyMinorUnit =
                       "Opción disponible";
 
                     const variationPrice =
-                      variation.sale_price || variation.price;
+                      variation.sale_price ||
+                      variation.price;
 
                     return (
                       <article
                         className="variation-option"
                         key={variation.id}
                       >
-                        {variation.image?.src ? (
-                          <Image
-                            src={variation.image.src}
-                            alt={attributes}
-                            width={80}
-                            height={80}
-                            unoptimized
-                          />
-                        ) : (
-                          <div className="variation-placeholder">
-                            👓
-                          </div>
-                        )}
-
                         <div>
                           <p>{attributes}</p>
 
@@ -243,7 +242,8 @@ const currencyMinorUnit =
                           </small>
 
                           <small>
-                            {variation.stock_status === "instock"
+                            {variation.stock_status ===
+                            "instock"
                               ? "Disponible"
                               : "No disponible"}
                           </small>
@@ -268,12 +268,18 @@ const currencyMinorUnit =
               </label>
 
               <label>
-                <input type="radio" name="purchase-type" />
+                <input
+                  type="radio"
+                  name="purchase-type"
+                />
                 Armazón con lentes graduados
               </label>
 
               <label>
-                <input type="checkbox" name="eye-exam" />
+                <input
+                  type="checkbox"
+                  name="eye-exam"
+                />
                 Quiero agendar un examen visual
               </label>
             </section>
