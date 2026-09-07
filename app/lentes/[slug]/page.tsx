@@ -11,18 +11,27 @@ type ProductPageProps = {
   }>;
 };
 
-function formatPrice(price?: string) {
+function formatPrice(
+  price?: string,
+  currencySymbol = "$",
+  minorUnit = 2
+) {
   if (!price) {
     return "Consultar precio";
   }
 
-  const value = Number(price);
+  const rawValue = Number(price);
 
-  if (Number.isNaN(value)) {
+  if (Number.isNaN(rawValue)) {
     return "Consultar precio";
   }
 
-  return `$${value.toLocaleString("es-MX")} MXN`;
+  const value = rawValue / 10 ** minorUnit;
+
+  return `${currencySymbol}${value.toLocaleString("es-MX", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} MXN`;
 }
 
 function cleanHtml(html = "") {
