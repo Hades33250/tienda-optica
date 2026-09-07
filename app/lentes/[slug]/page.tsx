@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ProductConfigurator from "../../../components/ProductConfigurator";
@@ -24,21 +23,6 @@ type StorePrices = {
   currency_symbol?: string;
 };
 
-type StoreProduct = {
-  id: number;
-  name: string;
-  slug: string;
-  description?: string;
-  short_description?: string;
-  prices?: StorePrices;
-  on_sale?: boolean;
-  images?: StoreImage[];
-  attributes?: StoreAttribute[];
-  stock_status?: string;
-  sku?: string;
-  permalink?: string;
-};
-
 type StoreVariation = {
   id: number;
   sku?: string;
@@ -49,6 +33,23 @@ type StoreVariation = {
     name: string;
     option: string;
   }[];
+};
+
+type StoreProduct = {
+  id: number;
+  name: string;
+  slug: string;
+  type?: string;
+  description?: string;
+  short_description?: string;
+  prices?: StorePrices;
+  on_sale?: boolean;
+  images?: StoreImage[];
+  variations?: StoreVariation[];
+  attributes?: StoreAttribute[];
+  stock_status?: string;
+  sku?: string;
+  permalink?: string;
 };
 
 type PageProps = {
@@ -97,6 +98,21 @@ function getPriceFromStorePrices(prices?: StorePrices) {
   return amount / 10 ** minorUnit;
 }
 
+function getRegularPriceFromStorePrices(prices?: StorePrices) {
+  if (!prices?.regular_price) {
+    return 0;
+  }
+
+  const amount = Number(prices.regular_price);
+  const minorUnit = prices.currency_minor_unit ?? 2;
+
+  if (!Number.isFinite(amount)) {
+    return 0;
+  }
+
+  return amount / 10 ** minorUnit;
+}
+
 function formatMoney(value: number, symbol = "$") {
   return `${symbol}${value.toLocaleString("es-MX", {
     minimumFractionDigits: 2,
@@ -122,13 +138,17 @@ async function getProduct(slug: string): Promise<StoreProduct | null> {
   return products[0] || null;
 }
 
-async function getVariations(productId: number): Promise<StoreVariation[]> {
+async function getVariations(product: StoreProduct): Promise<StoreVariation[]> {
+  if (product.variations && product.variations.length > 0) {
+    return product.variations;
+  }
+
   if (!STORE_URL) {
     return [];
   }
 
   const response = await fetch(
-    `${STORE_URL}/wp-json/wc/store/v1/products/${productId}/variations`,
+    `${STORE_URL}/wp-json/wc/store/v1/products/${product.id}`,
     { next: { revalidate: 60 } }
   );
 
@@ -136,7 +156,8 @@ async function getVariations(productId: number): Promise<StoreVariation[]> {
     return [];
   }
 
-  return (await response.json()) as StoreVariation[];
+  const fullProduct = (await response.json()) as StoreProduct;
+  return fullProduct.variations || [];
 }
 
 export default async function ProductPage({ params }: PageProps) {
@@ -147,17 +168,27 @@ export default async function ProductPage({ params }: PageProps) {
     notFound();
   }
 
-  const variations = await getVariations(product.id);
+  const variations = await getVariations(product);
   const price = getPriceFromStorePrices(product.prices);
+  const regularPrice = getRegularPriceFromStorePrices(product.prices);
   const currencySymbol = product.prices?.currency_symbol || "$";
   const description = stripHtml(product.description || product.short_description || "");
   const mainImage = product.images?.[0];
   const productUrl = product.permalink || `${STORE_URL}/producto/${product.slug}/`;
-  const regularPrice = getPriceFromStorePrices({
-    ...product.prices,
-    price: product.prices?.regular_price,
-    sale_price: undefined,
-  });
+
+  const configuratorVariations = variations.map((variation) => ({
+    id: variation.id,
+    name: variation.sku || "Opción disponible",
+    price: variation.prices
+      ? getPriceFromStorePrices(variation.prices).toString()
+      : undefined,
+    regularPrice: variation.prices?.regular_price
+      ? getRegularPriceFromStorePrices(variation.prices).toString()
+      : undefined,
+    stockStatus: variation.stock_status,
+    image: variation.image?.src || mainImage?.src,
+    attributes: variation.attributes || [],
+  }));
 
   return (
     <main className="product-page">
@@ -171,13 +202,10 @@ export default async function ProductPage({ params }: PageProps) {
         <div className="product-gallery">
           <div className="product-main-image">
             {mainImage?.src ? (
-              <Image
+              <img
                 src={mainImage.src}
                 alt={mainImage.alt || decodeHtml(product.name)}
-                width={900}
-                height={700}
-                priority
-                sizes="(max-width: 900px) 100vw, 50vw"
+                className="product-main-image-file"
               />
             ) : (
               <div className="product-image-placeholder">
@@ -190,11 +218,10 @@ export default async function ProductPage({ params }: PageProps) {
             <div className="product-thumbnails">
               {product.images.slice(1).map((image, index) => (
                 <div className="product-thumbnail" key={image.id || index}>
-                  <Image
+                  <img
                     src={image.thumbnail || image.src}
                     alt={image.alt || `${decodeHtml(product.name)} ${index + 2}`}
-                    width={110}
-                    height={90}
+                    className="product-thumbnail-file"
                   />
                 </div>
               ))}
@@ -239,15 +266,7 @@ export default async function ProductPage({ params }: PageProps) {
             productUrl={productUrl}
             basePrice={price}
             currencySymbol={currencySymbol}
-            variations={variations.map((variation) => ({
-              id: variation.id,
-              name: variation.sku || "Opción disponible",
-              price: variation.prices?.price,
-              regularPrice: variation.prices?.regular_price,
-              stockStatus: variation.stock_status,
-              image: variation.image?.src,
-              attributes: variation.attributes || [],
-            }))}
+            variations={configuratorVariations}
           />
         </div>
       </section>
